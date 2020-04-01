@@ -1,0 +1,7 @@
+[PoolName]
+desc = "The display name for the WorldCat pool"
+other = "WorldCat"
+
+[PoolDescription]
+desc = "The detailed description for the WorldCat pool"
+other = "Materiales de la red global de WorldCat."
