@@ -102,28 +102,22 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	log.Printf("Identify request Accept-Language %s", acceptLang)
 	localizer := i18n.NewLocalizer(svc.I18NBundle, acceptLang)
 
-	type attribute struct {
-		Name      string `json:"name"`
-		Supported bool   `json:"supported"`
-		Value     string `json:"value,omitempty"`
-	}
-	type identity struct {
-		Name         string      `json:"name"`
-		Descrription string      `json:"description"`
-		Mode         string      `json:"mode"`
-		Attributes   []attribute `json:"attributes,omitempty"`
-	}
-	resp := identity{Attributes: make([]attribute, 0)}
+	resp := PoolIdentity{Attributes: make([]PoolAttribute, 0)}
 	resp.Name = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolName"})
-	resp.Descrription = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolDescription"})
+	resp.Description = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolDescription"})
 	resp.Mode = "record"
-	resp.Attributes = append(resp.Attributes, attribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "external_url", Supported: true, Value: "https://uva.worldcat.org/"})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "uva_ils", Supported: false})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "facets", Supported: false})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "cover_images", Supported: false})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "course_reserves", Supported: false})
-	resp.Attributes = append(resp.Attributes, attribute{Name: "sorting", Supported: true})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "external_url", Supported: true, Value: "https://uva.worldcat.org/"})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "uva_ils", Supported: false})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "facets", Supported: false})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "cover_images", Supported: false})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "course_reserves", Supported: false})
+	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "sorting", Supported: true})
+	resp.SortOptions = make([]SortOption, 0)
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortRelevance", Label: "Relevance"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortDatePublished", Label: "Date Published"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortTitle", Label: "Title"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortAuthor", Label: "Author"})
 
 	c.JSON(http.StatusOK, resp)
 }

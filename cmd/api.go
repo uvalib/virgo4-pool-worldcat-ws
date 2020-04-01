@@ -1,5 +1,33 @@
 package main
 
+// PoolAttribute describes a capability of a pool
+type PoolAttribute struct {
+	Name      string `json:"name"`
+	Supported bool   `json:"supported"`
+	Value     string `json:"value,omitempty"`
+}
+
+// PoolIdentity contains the complete data that descibes a pool and its abilities
+type PoolIdentity struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Mode        string          `json:"mode"`
+	Attributes  []PoolAttribute `json:"attributes,omitempty"`
+	SortOptions []SortOption    `json:"sort_options,omitempty"`
+}
+
+// SortOrder specifies sort ordering for a given search.
+type SortOrder struct {
+	SortID string `json:"sort_id"`
+	Order  string `json:"order"`
+}
+
+// SortOption defines a sorting option for a pool
+type SortOption struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+}
+
 // SearchRequest contains all of the data necessary for a client seatch request
 // Note that the JMRL pool does not support facets/filters
 type SearchRequest struct {
@@ -18,6 +46,7 @@ type Pagination struct {
 type PoolResult struct {
 	ElapsedMS       int64                  `json:"elapsed_ms,omitempty"`
 	Pagination      Pagination             `json:"pagination"`
+	Sort            SortOrder              `json:"sort,omitempty"`
 	Groups          []Group                `json:"group_list,omitempty"`
 	Confidence      string                 `json:"confidence,omitempty"`
 	Debug           map[string]interface{} `json:"debug"`
@@ -49,42 +78,4 @@ type RecordField struct {
 	Visibility string `json:"visibility,omitempty"` // e.g. "basic" or "detailed".  empty implies "basic"
 	Display    string `json:"display,omitempty"`    // e.g. "optional".  empty implies not optional
 	Provider   string `json:"provider,omitempty"`
-}
-
-// JMRLResult contains the response data from a JMRL search
-type JMRLResult struct {
-	Count   int `json:"count"`
-	Total   int `json:"total"`
-	Start   int `json:"start"`
-	Entries []struct {
-		Relevance float32 `json:"relevance"`
-		Bib       JMRLBib `json:"bib"`
-	} `json:"entries"`
-}
-
-// JMRLBib contans the MARC and JRML data for a single query hit
-type JMRLBib struct {
-	ID          string          `json:"id"`
-	PublishYear int             `json:"publishYear"`
-	Language    JMRLCodeValue   `json:"lang"`
-	Type        JMRLCodeValue   `json:"materialType"`
-	Locations   []JMRLCodeValue `json:"locations"`
-	Available   bool            `json:"available"`
-	VarFields   []JMRLVarFields `json:"varFields"`
-}
-
-// JMRLCodeValue is a pair of code / value or code/name data
-type JMRLCodeValue struct {
-	Code  string `json:"code"`
-	Value string `json:"value,omitempty"`
-	Name  string `json:"name,omitempty"`
-}
-
-// JMRLVarFields contains MARC data from the JRML fields=varFields request param
-type JMRLVarFields struct {
-	MarcTag   string `json:"marcTag"`
-	Subfields []struct {
-		Tag     string `json:"tag"`
-		Content string `json:"content"`
-	} `json:"subfields"`
 }

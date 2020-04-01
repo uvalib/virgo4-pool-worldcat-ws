@@ -21,6 +21,12 @@ type poolProviders struct {
 // ProvidersHandler returns a list of access_url providers for JMRL
 func (svc *ServiceContext) providersHandler(c *gin.Context) {
 	p := poolProviders{Providers: make([]providerDetails, 0)}
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "worldcat",
+		Label:       "WorldCat",
+		LogoURL:     "/assets/wclogo.png",
+		HomepageURL: "https://uva.worldcat.org",
+	})
 	c.JSON(http.StatusOK, p)
 }
 
