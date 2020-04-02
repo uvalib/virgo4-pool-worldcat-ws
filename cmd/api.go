@@ -1,5 +1,23 @@
 package main
 
+// SortOptionEnum is the enumerated type for WorldCat sort options
+type SortOptionEnum int
+
+const (
+	// SortRelevance is used to sort by descending relevance
+	SortRelevance SortOptionEnum = iota
+	// SortDate is used to sort by published date
+	SortDate
+	// SortTitle is used to sort by title
+	SortTitle
+	// SortAuthor is used to sort by Author
+	SortAuthor
+)
+
+func (r SortOptionEnum) String() string {
+	return []string{"SortRelevance", "SortDatePublished", "SortTitle", "SortAuthor"}[r]
+}
+
 // PoolAttribute describes a capability of a pool
 type PoolAttribute struct {
 	Name      string `json:"name"`
@@ -33,6 +51,7 @@ type SortOption struct {
 type SearchRequest struct {
 	Query      string     `json:"query"`
 	Pagination Pagination `json:"pagination"`
+	Sort       SortOrder  `json:"sort,omitempty"`
 }
 
 // Pagination cantains pagination info

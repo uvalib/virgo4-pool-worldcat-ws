@@ -114,10 +114,10 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "course_reserves", Supported: false})
 	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "sorting", Supported: true})
 	resp.SortOptions = make([]SortOption, 0)
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortRelevance", Label: "Relevance"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortDatePublished", Label: "Date Published"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortTitle", Label: "Title"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: "SortAuthor", Label: "Author"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortRelevance.String(), Label: "Relevance"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortDate.String(), Label: "Date Published"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortTitle.String(), Label: "Title"})
+	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortAuthor.String(), Label: "Author"})
 
 	c.JSON(http.StatusOK, resp)
 }
