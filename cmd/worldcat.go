@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/uvalib/virgo4-parser/v4parser"
@@ -21,6 +24,26 @@ type providerDetails struct {
 
 type poolProviders struct {
 	Providers []providerDetails `json:"providers"`
+}
+
+type wcSearchResponse struct {
+	XMLName xml.Name   `xml:"searchRetrieveResponse"`
+	Count   int        `xml:"numberOfRecords"`
+	Records []wcRecord `xml:"records>record>recordData>oclcdcs"`
+}
+
+type wcRecord struct {
+	XMLName     xml.Name `xml:"oclcdcs"`
+	ID          string   `xml:"recordIdentifier"`
+	Date        string   `xml:"date"`
+	Language    string   `xml:"language"`
+	ISBN        []string `xml:"identifier"`
+	Creator     []string `xml:"creator,omitempty"`
+	Contributor []string `xml:"contributor,omitempty"`
+	Description []string `xml:"description,omitempty"`
+	Subjects    []string `xml:"subject,omitempty"`
+	Title       []string `xml:"title,omitempty"`
+	Type        []string `xml:"type,omitempty"`
 }
 
 // ProvidersHandler returns a list of access_url providers for JMRL
@@ -86,6 +109,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
+	startTime := time.Now()
 	qURL := fmt.Sprintf("%s/search/worldcat/sru?recordSchema=dc&query=%s&%s&%s&wskey=%s",
 		svc.WCAPI, url.QueryEscape(parsedQ), paginationStr, sortKey, svc.WCKey)
 	rawResp, respErr := svc.apiGet(qURL)
@@ -94,9 +118,43 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	// log.Printf("RESP [%s]", rawResp)
+	// successful search; setup response
+	elapsedNanoSec := time.Since(startTime)
+	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
+	v4Resp := &PoolResult{ElapsedMS: elapsedMS, ContentLanguage: "medium"}
+	v4Resp.Groups = make([]Group, 0)
+	if req.Sort.SortID == "" {
+		v4Resp.Sort.SortID = SortRelevance.String()
+		v4Resp.Sort.Order = "desc"
+	} else {
+		v4Resp.Sort = req.Sort
+	}
 
-	c.String(http.StatusOK, string(rawResp))
+	wcResp := &wcSearchResponse{}
+	fmtErr := xml.Unmarshal(rawResp, wcResp)
+	if fmtErr != nil {
+		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
+		v4Resp.StatusCode = http.StatusInternalServerError
+		v4Resp.StatusMessage = fmtErr.Error()
+		c.JSON(v4Resp.StatusCode, v4Resp)
+		return
+	}
+
+	v4Resp.Pagination = Pagination{Start: req.Pagination.Start, Total: wcResp.Count,
+		Rows: len(wcResp.Records)}
+	for _, wcRec := range wcResp.Records {
+		groupRec := Group{Value: wcRec.ID, Count: 1}
+		groupRec.Records = make([]Record, 0)
+		record := Record{}
+		record.Fields = getResultFields(&wcRec)
+		groupRec.Records = append(groupRec.Records, record)
+		v4Resp.Groups = append(v4Resp.Groups, groupRec)
+	}
+
+	v4Resp.StatusCode = http.StatusOK
+	v4Resp.StatusMessage = "OK"
+	v4Resp.ContentLanguage = acceptLang
+	c.JSON(http.StatusOK, v4Resp)
 }
 
 // Facets placeholder implementaion for a V4 facet POST.
@@ -177,4 +235,59 @@ func getSortKey(sort SortOrder) string {
 		return "Date,,0"
 	}
 	return "relevance"
+}
+
+func getResultFields(wcRec *wcRecord) []RecordField {
+	fields := make([]RecordField, 0)
+	f := RecordField{Name: "id", Type: "identifier", Label: "Identifier",
+		Value: wcRec.ID, Display: "optional"}
+	fields = append(fields, f)
+
+	f = RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
+		Value: wcRec.Date}
+	fields = append(fields, f)
+
+	for _, val := range wcRec.Type {
+		f = RecordField{Name: "format", Type: "format", Label: "Format", Value: val}
+		fields = append(fields, f)
+	}
+
+	f = RecordField{Name: "language", Type: "language", Label: "Language",
+		Value: wcRec.Language, Visibility: "detailed"}
+	fields = append(fields, f)
+
+	f = RecordField{Name: "title", Type: "title", Label: "Title", Value: strings.Join(wcRec.Title, " ")}
+	fields = append(fields, f)
+
+	for _, val := range wcRec.ISBN {
+		if strings.Contains(val, "http") == false {
+			f = RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
+			fields = append(fields, f)
+		} else {
+			log.Printf("ONLINE ACCESS: %s", val)
+		}
+	}
+
+	for _, val := range wcRec.Creator {
+		f = RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		fields = append(fields, f)
+	}
+	for _, val := range wcRec.Contributor {
+		f = RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		fields = append(fields, f)
+	}
+
+	for _, val := range wcRec.Subjects {
+		f = RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed"}
+		fields = append(fields, f)
+	}
+
+	f = RecordField{Name: "description", Type: "summary", Label: "Description",
+		Value: strings.Join(wcRec.Description, " ")}
+	fields = append(fields, f)
+
+	// TODO availability?
+	// loks like if isbn is a link its available online
+
+	return fields
 }
