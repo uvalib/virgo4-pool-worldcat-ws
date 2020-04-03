@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -132,18 +133,28 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	parsedQ = strings.ReplaceAll(parsedQ, "{", "")
 	parsedQ = strings.ReplaceAll(parsedQ, "}", "")
 	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw =")
-	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ki =")
+	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti =")
 	parsedQ = strings.ReplaceAll(parsedQ, "author:", "srw.au =")
 	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su =")
 	parsedQ = strings.ReplaceAll(parsedQ, "identifier:", "srw.bn =")
 	parsedQ = strings.TrimSpace(parsedQ)
-	log.Printf("Parsed query: %s", parsedQ)
 	if parsedQ == "" || parsedQ == "*" {
 		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
 		return
 	}
 
+	// if a basic search that is ISBN is done (just a number) do an identifier search too
+	if strings.Index(parsedQ, "srw.") == strings.LastIndex(parsedQ, "srw.") &&
+		strings.Index(parsedQ, "srw.") == strings.Index(parsedQ, "srw.kw") {
+		param := strings.Trim(strings.Split(parsedQ, " = ")[1], " ")
+		if _, err := strconv.Atoi(param); err == nil {
+			log.Printf("%s looks like a keyword query for an identifier; add identifier search", parsedQ)
+			parsedQ += fmt.Sprintf(" OR srw.bn = %s", param)
+		}
+	}
+
 	// skip any UVA libraries
+	log.Printf("Parsed query: %s", parsedQ)
 	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM NOT srw.li = VCV"
 
 	startTime := time.Now()
@@ -354,9 +365,6 @@ func getResultFields(wcRec *wcRecord) []RecordField {
 	f = RecordField{Name: "description", Type: "summary", Label: "Description",
 		Value: strings.Join(wcRec.Description, " ")}
 	fields = append(fields, f)
-
-	// TODO availability?
-	// loks like if isbn is a link its available online
 
 	return fields
 }
