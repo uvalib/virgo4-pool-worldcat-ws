@@ -45,6 +45,8 @@ type wcRecord struct {
 	Subjects    []string `xml:"subject,omitempty"`
 	Title       []string `xml:"title,omitempty"`
 	Type        []string `xml:"type,omitempty"`
+	Formats     []string `xml:"format,omitempty"`
+	Publishers  []string `xml:"publisher,omitempty"`
 }
 
 // ProvidersHandler returns a list of access_url providers for JMRL
@@ -215,7 +217,27 @@ func (svc *ServiceContext) facets(c *gin.Context) {
 func (svc *ServiceContext) getResource(c *gin.Context) {
 	id := c.Param("id")
 	log.Printf("Resource %s details requested", id)
-	c.String(http.StatusNotImplemented, "under construction")
+	qURL := fmt.Sprintf("%s/content/%s?recordSchema=dc&serviceLevel=full&wskey=%s",
+		svc.WCAPI, id, svc.WCKey)
+	rawResp, respErr := svc.apiGet(qURL)
+	if respErr != nil {
+		c.String(respErr.StatusCode, respErr.Message)
+		return
+	}
+
+	wcResp := &wcRecord{}
+	fmtErr := xml.Unmarshal(rawResp, wcResp)
+	if fmtErr != nil {
+		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
+		c.String(http.StatusInternalServerError, fmtErr.Error())
+		return
+	}
+
+	var jsonResp struct {
+		Fields []RecordField `json:"fields"`
+	}
+	jsonResp.Fields = getResultFields(wcResp)
+	c.JSON(http.StatusOK, jsonResp)
 }
 
 func convertDateCriteria(query string) (string, error) {
@@ -365,6 +387,18 @@ func getResultFields(wcRec *wcRecord) []RecordField {
 	f = RecordField{Name: "description", Type: "summary", Label: "Description",
 		Value: strings.Join(wcRec.Description, " ")}
 	fields = append(fields, f)
+
+	for _, val := range wcRec.Publishers {
+		f = RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val}
+	}
+
+	for _, val := range wcRec.Formats {
+		f = RecordField{Name: "format", Label: "Format", Visibility: "detailed", Value: val}
+	}
+
+	for _, val := range wcRec.Type {
+		f = RecordField{Name: "type", Label: "Type", Visibility: "detailed", Value: val}
+	}
 
 	return fields
 }
