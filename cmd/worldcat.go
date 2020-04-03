@@ -53,7 +53,43 @@ func (svc *ServiceContext) providersHandler(c *gin.Context) {
 		Provider:    "worldcat",
 		Label:       "WorldCat",
 		LogoURL:     "/assets/wclogo.png",
-		HomepageURL: "https://uva.worldcat.org",
+		HomepageURL: "https://www.worldcat.org/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "hathitrust",
+		Label:       "Hathi Trust Digital Library",
+		LogoURL:     "/assets/hathitrust.png",
+		HomepageURL: "https://www.hathitrust.org/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "proquest",
+		Label:       "ProQuest U.S. Congressional Hearings Digital Collection",
+		LogoURL:     "/assets/proquest.jpg",
+		HomepageURL: "https://www.proquest.com/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "google",
+		Label:       "Google Books",
+		LogoURL:     "/assets/google.png",
+		HomepageURL: "https://books.google.com/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "vlebooks",
+		Label:       "VLeBooks",
+		LogoURL:     "/assets/vlebooks.png",
+		HomepageURL: "https://www.vlebooks.com/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "canadiana",
+		Label:       "Canadiana",
+		LogoURL:     "/assets/canadiana.png",
+		HomepageURL: "http://www.canadiana.ca/",
+	})
+	p.Providers = append(p.Providers, providerDetails{
+		Provider:    "overdrive",
+		Label:       "Overdrive",
+		LogoURL:     "/assets/overdrive.png",
+		HomepageURL: "https://www.overdrive.com",
 	})
 	c.JSON(http.StatusOK, p)
 }
@@ -84,11 +120,9 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	paginationStr := fmt.Sprintf("startRecord=%d&maximumRecords=%d", req.Pagination.Start, req.Pagination.Rows)
 	sortKey := fmt.Sprintf("sortKeys=%s", getSortKey(req.Sort))
 
-	//  Convert V4 query into WorldCat format
+	// Convert V4 query into WorldCat format
 	// EX: keyword: {(calico OR "tortoise shell") AND cats}
 	// DATES: date: {1987} OR date: {AFTER 2010} OR date: {BEFORE 1990} OR date: {1987 TO 1990}
-	// NOTE: the v4 language allows multiple instances of each criteria. WorldCat does not, so the raw query must be
-	// broken up by criteria and then combined so each only appears once
 	parsedQ, dErr := convertDateCriteria(req.Query)
 	if dErr != nil {
 		log.Printf("ERROR: invalid date in query %s", req.Query)
@@ -105,9 +139,12 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	parsedQ = strings.TrimSpace(parsedQ)
 	log.Printf("Parsed query: %s", parsedQ)
 	if parsedQ == "" || parsedQ == "*" {
-		c.String(http.StatusNotImplemented, "Blank or * searches are not supported")
+		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
 		return
 	}
+
+	// skip any UVA libraries
+	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM NOT srw.li = VCV"
 
 	startTime := time.Now()
 	qURL := fmt.Sprintf("%s/search/worldcat/sru?recordSchema=dc&query=%s&%s&%s&wskey=%s",
@@ -247,25 +284,57 @@ func getResultFields(wcRec *wcRecord) []RecordField {
 		Value: wcRec.Date}
 	fields = append(fields, f)
 
-	for _, val := range wcRec.Type {
-		f = RecordField{Name: "format", Type: "format", Label: "Format", Value: val}
-		fields = append(fields, f)
-	}
-
 	f = RecordField{Name: "language", Type: "language", Label: "Language",
 		Value: wcRec.Language, Visibility: "detailed"}
 	fields = append(fields, f)
 
-	f = RecordField{Name: "title", Type: "title", Label: "Title", Value: strings.Join(wcRec.Title, " ")}
+	f = RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0]}
 	fields = append(fields, f)
 
+	online := false
 	for _, val := range wcRec.ISBN {
 		if strings.Contains(val, "http") == false {
 			f = RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
 			fields = append(fields, f)
 		} else {
-			log.Printf("ONLINE ACCESS: %s", val)
+			if strings.Contains(val, "api.overdrive") || strings.Contains(val, "[institution]") {
+				log.Printf("WARN: Skipping URL that appears invalid: %s", val)
+			} else {
+				online = true
+				onlineF := RecordField{Name: "access_url", Type: "url", Label: "Online Access", Value: val, Provider: "worldcat"}
+				if strings.Contains(val, "hathitrust") {
+					log.Printf("Online access with HathiTrust")
+					onlineF.Provider = "hathitrust"
+				} else if strings.Contains(val, "proquest") {
+					log.Printf("Online access with ProQuest")
+					onlineF.Provider = "proquest"
+				} else if strings.Contains(val, "google") {
+					log.Printf("Online access with Google")
+					onlineF.Provider = "google"
+				} else if strings.Contains(val, "vlebooks") {
+					log.Printf("Online access with VLeBooks")
+					onlineF.Provider = "vlebooks"
+				} else if strings.Contains(val, "canadiana") {
+					log.Printf("Online access with Canadiana")
+					onlineF.Provider = "canadiana"
+				} else if strings.Contains(val, "overdrive") {
+					log.Printf("Online access with Overdrive")
+					onlineF.Provider = "overdrive"
+				} else {
+					log.Printf("Online access: %s", val)
+				}
+
+				fields = append(fields, onlineF)
+			}
 		}
+	}
+
+	if online {
+		availF := RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "Online"}
+		fields = append(fields, availF)
+	} else {
+		availF := RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "By Request"}
+		fields = append(fields, availF)
 	}
 
 	for _, val := range wcRec.Creator {
