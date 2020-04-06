@@ -370,6 +370,10 @@ func getResultFields(wcRec *wcRecord) []RecordField {
 		fields = append(fields, availF)
 	}
 
+	f = RecordField{Name: "worldcat_url", Type: "url", Label: "More Details", Provider: "worldcat",
+		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", wcRec.ID), Visibility: "detailed"}
+	fields = append(fields, f)
+
 	for _, val := range wcRec.Creator {
 		f = RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
 		fields = append(fields, f)
