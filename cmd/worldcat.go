@@ -140,7 +140,8 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su =")
 	parsedQ = strings.ReplaceAll(parsedQ, "identifier:", "srw.bn =")
 	parsedQ = strings.TrimSpace(parsedQ)
-	if parsedQ == "" || parsedQ == "*" {
+	log.Printf("Raw parsed query [%s]", parsedQ)
+	if parsedQ == "srw.kw =" || parsedQ == "srw.kw = *" {
 		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
 		return
 	}
@@ -156,7 +157,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	// skip any UVA libraries
-	log.Printf("Parsed query: %s", parsedQ)
+	log.Printf("Final parsed query: %s", parsedQ)
 	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM NOT srw.li = VCV"
 
 	startTime := time.Now()
