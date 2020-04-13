@@ -4,4 +4,4 @@ other = "WorldCat"
 
 [PoolDescription]
 desc = "The detailed description for the WorldCat pool"
-other = "WorldCat is the world's most comprehensive database of information about library collections. <a href="https://www.worldcat.org/">Learn more about WorldCat.</a>"
+other = "WorldCat is the world's most comprehensive database of information about library collections. <a href='https://www.worldcat.org/'>Learn more about WorldCat.</a>"
