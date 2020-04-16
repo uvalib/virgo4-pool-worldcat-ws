@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/uvalib/virgo4-api/v4api"
 	"github.com/uvalib/virgo4-jwt/v4jwt"
 	"golang.org/x/text/language"
 )
@@ -102,22 +103,22 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	log.Printf("Identify request Accept-Language %s", acceptLang)
 	localizer := i18n.NewLocalizer(svc.I18NBundle, acceptLang)
 
-	resp := PoolIdentity{Attributes: make([]PoolAttribute, 0)}
+	resp := v4api.PoolIdentity{Attributes: make([]v4api.PoolAttribute, 0)}
 	resp.Name = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolName"})
 	resp.Description = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolDescription"})
 	resp.Mode = "record"
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "external_url", Supported: true, Value: "https://uva.worldcat.org/"})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "uva_ils", Supported: false})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "facets", Supported: false})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "cover_images", Supported: false})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "course_reserves", Supported: false})
-	resp.Attributes = append(resp.Attributes, PoolAttribute{Name: "sorting", Supported: true})
-	resp.SortOptions = make([]SortOption, 0)
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortRelevance.String(), Label: "Relevance"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortDate.String(), Label: "Date Published"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortTitle.String(), Label: "Title"})
-	resp.SortOptions = append(resp.SortOptions, SortOption{ID: SortAuthor.String(), Label: "Author"})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "external_url", Supported: true, Value: "https://uva.worldcat.org/"})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "uva_ils", Supported: false})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "facets", Supported: false})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "cover_images", Supported: false})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "course_reserves", Supported: false})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "sorting", Supported: true})
+	resp.SortOptions = make([]v4api.SortOption, 0)
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortRelevance.String(), Label: "Relevance"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortDate.String(), Label: "Date Published"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortTitle.String(), Label: "Title"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortAuthor.String(), Label: "Author"})
 
 	c.JSON(http.StatusOK, resp)
 }

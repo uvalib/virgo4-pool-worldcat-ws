@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/uvalib/virgo4-api/v4api"
 	"github.com/uvalib/virgo4-parser/v4parser"
 )
 
@@ -100,7 +101,7 @@ func (svc *ServiceContext) providersHandler(c *gin.Context) {
 // Search accepts a search POST, transforms the query into JMRL format and perfoms the search
 func (svc *ServiceContext) search(c *gin.Context) {
 	log.Printf("Search requested")
-	var req SearchRequest
+	var req v4api.SearchRequest
 	if err := c.BindJSON(&req); err != nil {
 		log.Printf("ERROR: unable to parse search request: %s", err.Error())
 		c.String(http.StatusBadRequest, "invalid request")
@@ -172,10 +173,10 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	// successful search; setup response
 	elapsedNanoSec := time.Since(startTime)
 	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
-	v4Resp := &PoolResult{ElapsedMS: elapsedMS, ContentLanguage: "medium"}
-	v4Resp.Groups = make([]Group, 0)
+	v4Resp := &v4api.PoolResult{ElapsedMS: elapsedMS, ContentLanguage: "medium"}
+	v4Resp.Groups = make([]v4api.Group, 0)
 	if req.Sort.SortID == "" {
-		v4Resp.Sort.SortID = SortRelevance.String()
+		v4Resp.Sort.SortID = v4api.SortRelevance.String()
 		v4Resp.Sort.Order = "desc"
 	} else {
 		v4Resp.Sort = req.Sort
@@ -191,12 +192,12 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	v4Resp.Pagination = Pagination{Start: req.Pagination.Start, Total: wcResp.Count,
+	v4Resp.Pagination = v4api.Pagination{Start: req.Pagination.Start, Total: wcResp.Count,
 		Rows: len(wcResp.Records)}
 	for _, wcRec := range wcResp.Records {
-		groupRec := Group{Value: wcRec.ID, Count: 1}
-		groupRec.Records = make([]Record, 0)
-		record := Record{}
+		groupRec := v4api.Group{Value: wcRec.ID, Count: 1}
+		groupRec.Records = make([]v4api.Record, 0)
+		record := v4api.Record{}
 		record.Fields = getResultFields(&wcRec)
 		groupRec.Records = append(groupRec.Records, record)
 		v4Resp.Groups = append(v4Resp.Groups, groupRec)
@@ -235,7 +236,7 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 	}
 
 	var jsonResp struct {
-		Fields []RecordField `json:"fields"`
+		Fields []v4api.RecordField `json:"fields"`
 	}
 	jsonResp.Fields = getResultFields(wcResp)
 	c.JSON(http.StatusOK, jsonResp)
@@ -286,20 +287,20 @@ func convertDateCriteria(query string) (string, error) {
 	return query, nil
 }
 
-func getSortKey(sort SortOrder) string {
-	if sort.SortID == SortAuthor.String() {
+func getSortKey(sort v4api.SortOrder) string {
+	if sort.SortID == v4api.SortAuthor.String() {
 		if sort.Order == "asc" {
 			return "Author"
 		}
 		return "Author,,0"
 	}
-	if sort.SortID == SortTitle.String() {
+	if sort.SortID == v4api.SortTitle.String() {
 		if sort.Order == "asc" {
 			return "Title"
 		}
 		return "Title,,0"
 	}
-	if sort.SortID == SortDate.String() {
+	if sort.SortID == v4api.SortDate.String() {
 		if sort.Order == "asc" {
 			return "Date"
 		}
@@ -308,34 +309,34 @@ func getSortKey(sort SortOrder) string {
 	return "relevance"
 }
 
-func getResultFields(wcRec *wcRecord) []RecordField {
-	fields := make([]RecordField, 0)
-	f := RecordField{Name: "id", Type: "identifier", Label: "Identifier",
+func getResultFields(wcRec *wcRecord) []v4api.RecordField {
+	fields := make([]v4api.RecordField, 0)
+	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier",
 		Value: wcRec.ID, Display: "optional"}
 	fields = append(fields, f)
 
-	f = RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
+	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
 		Value: wcRec.Date}
 	fields = append(fields, f)
 
-	f = RecordField{Name: "language", Type: "language", Label: "Language",
+	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language",
 		Value: wcRec.Language, Visibility: "detailed"}
 	fields = append(fields, f)
 
-	f = RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0]}
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0]}
 	fields = append(fields, f)
 
 	online := false
 	for _, val := range wcRec.ISBN {
 		if strings.Contains(val, "http") == false {
-			f = RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
+			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
 			fields = append(fields, f)
 		} else {
 			if strings.Contains(val, "api.overdrive") || strings.Contains(val, "[institution]") {
 				log.Printf("WARN: Skipping URL that appears invalid: %s", val)
 			} else {
 				online = true
-				onlineF := RecordField{Name: "access_url", Type: "url", Label: "Online Access", Value: val, Provider: "worldcat"}
+				onlineF := v4api.RecordField{Name: "access_url", Type: "url", Label: "Online Access", Value: val, Provider: "worldcat"}
 				if strings.Contains(val, "hathitrust") {
 					log.Printf("Online access with HathiTrust")
 					onlineF.Provider = "hathitrust"
@@ -364,45 +365,45 @@ func getResultFields(wcRec *wcRecord) []RecordField {
 	}
 
 	if online {
-		availF := RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "Online"}
+		availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "Online"}
 		fields = append(fields, availF)
 	} else {
-		availF := RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "By Request"}
+		availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "By Request"}
 		fields = append(fields, availF)
 	}
 
-	f = RecordField{Name: "worldcat_url", Type: "url", Label: "More Details", Provider: "worldcat",
+	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "More Details", Provider: "worldcat",
 		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", wcRec.ID), Visibility: "detailed"}
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Creator {
-		f = RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
 		fields = append(fields, f)
 	}
 	for _, val := range wcRec.Contributor {
-		f = RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
 		fields = append(fields, f)
 	}
 
 	for _, val := range wcRec.Subjects {
-		f = RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed"}
+		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed"}
 		fields = append(fields, f)
 	}
 
-	f = RecordField{Name: "description", Type: "summary", Label: "Description",
+	f = v4api.RecordField{Name: "description", Type: "summary", Label: "Description",
 		Value: strings.Join(wcRec.Description, " ")}
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Publishers {
-		f = RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val}
+		f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val}
 	}
 
 	for _, val := range wcRec.Formats {
-		f = RecordField{Name: "format", Label: "Format", Visibility: "detailed", Value: val}
+		f = v4api.RecordField{Name: "format", Label: "Format", Visibility: "detailed", Value: val}
 	}
 
 	for _, val := range wcRec.Type {
-		f = RecordField{Name: "type", Label: "Type", Visibility: "detailed", Value: val}
+		f = v4api.RecordField{Name: "type", Label: "Type", Visibility: "detailed", Value: val}
 	}
 
 	return fields
