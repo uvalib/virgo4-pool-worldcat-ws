@@ -312,24 +312,24 @@ func getSortKey(sort v4api.SortOrder) string {
 func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 	fields := make([]v4api.RecordField, 0)
 	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier",
-		Value: wcRec.ID, Display: "optional"}
+		Value: wcRec.ID, Display: "optional", RISCode: "ID"}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
-		Value: wcRec.Date}
+		Value: wcRec.Date, RISCode: "PY"}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language",
-		Value: wcRec.Language, Visibility: "detailed"}
+		Value: wcRec.Language, Visibility: "detailed", RISCode: "LA"}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0]}
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0], RISCode: "T1"}
 	fields = append(fields, f)
 
 	online := false
 	for _, val := range wcRec.ISBN {
 		if strings.Contains(val, "http") == false {
-			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
+			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, RISCode: "SN"}
 			fields = append(fields, f)
 		} else {
 			if strings.Contains(val, "api.overdrive") || strings.Contains(val, "[institution]") {
@@ -377,25 +377,25 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Creator {
-		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), RISCode: "AU"}
 		fields = append(fields, f)
 	}
 	for _, val := range wcRec.Contributor {
-		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val)}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), RISCode: "AU"}
 		fields = append(fields, f)
 	}
 
 	for _, val := range wcRec.Subjects {
-		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed"}
+		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed", RISCode: "KW"}
 		fields = append(fields, f)
 	}
 
 	f = v4api.RecordField{Name: "description", Type: "summary", Label: "Description",
-		Value: strings.Join(wcRec.Description, " ")}
+		Value: strings.Join(wcRec.Description, " "), RISCode: "AB"}
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Publishers {
-		f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val}
+		f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val, RISCode: "PB"}
 	}
 
 	for _, val := range wcRec.Formats {
