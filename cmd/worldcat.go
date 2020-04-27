@@ -150,7 +150,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	// if a basic search that is ISBN is done (just a number) do an identifier search too
 	if strings.Index(parsedQ, "srw.") == strings.LastIndex(parsedQ, "srw.") &&
 		strings.Index(parsedQ, "srw.") == strings.Index(parsedQ, "srw.kw") {
-		param := strings.Trim(strings.Split(parsedQ, " = ")[1], " ")
+		param := strings.Trim(strings.Split(parsedQ, "=")[1], " ")
 		if _, err := strconv.Atoi(param); err == nil {
 			log.Printf("%s looks like a keyword query for an identifier; add identifier search", parsedQ)
 			parsedQ += fmt.Sprintf(" OR srw.bn = %s", param)
