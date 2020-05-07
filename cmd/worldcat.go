@@ -176,8 +176,10 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	v4Resp := &v4api.PoolResult{ElapsedMS: elapsedMS, ContentLanguage: "medium"}
 	v4Resp.Groups = make([]v4api.Group, 0)
 	if req.Sort.SortID == "" {
-		v4Resp.Sort.SortID = v4api.SortRelevance.String()
-		v4Resp.Sort.Order = "desc"
+		v4Resp.Sort = &v4api.SortOrder{
+			SortID: v4api.SortRelevance.String(),
+			Order:  "desc",
+		}
 	} else {
 		v4Resp.Sort = &req.Sort
 	}
