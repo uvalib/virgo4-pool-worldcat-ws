@@ -179,7 +179,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		v4Resp.Sort.SortID = v4api.SortRelevance.String()
 		v4Resp.Sort.Order = "desc"
 	} else {
-		v4Resp.Sort = req.Sort
+		v4Resp.Sort = &req.Sort
 	}
 
 	wcResp := &wcSearchResponse{}
@@ -192,7 +192,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	v4Resp.Pagination = v4api.Pagination{Start: req.Pagination.Start, Total: wcResp.Count,
+	v4Resp.Pagination = &v4api.Pagination{Start: req.Pagination.Start, Total: wcResp.Count,
 		Rows: len(wcResp.Records)}
 	for _, wcRec := range wcResp.Records {
 		groupRec := v4api.Group{Value: wcRec.ID, Count: 1}
