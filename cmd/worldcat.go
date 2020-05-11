@@ -173,7 +173,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	// successful search; setup response
 	elapsedNanoSec := time.Since(startTime)
 	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
-	v4Resp := &v4api.PoolResult{ElapsedMS: elapsedMS, ContentLanguage: "medium"}
+	v4Resp := &v4api.PoolResult{ElapsedMS: elapsedMS, Confidence: "low"}
 	v4Resp.Groups = make([]v4api.Group, 0)
 	if req.Sort.SortID == "" {
 		v4Resp.Sort.SortID = v4api.SortRelevance.String()
@@ -201,6 +201,10 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		record.Fields = getResultFields(&wcRec)
 		groupRec.Records = append(groupRec.Records, record)
 		v4Resp.Groups = append(v4Resp.Groups, groupRec)
+	}
+
+	if wcResp.Count > 0 {
+		v4Resp.Confidence = "medium"
 	}
 
 	v4Resp.StatusCode = http.StatusOK
