@@ -108,7 +108,7 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.Description = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolDescription"})
 	resp.Mode = "record"
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
-	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "external_url", Supported: true, Value: "https://uva.worldcat.org/"})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "external_url", Supported: true, Value: "https://www.worldcat.org/"})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "uva_ils", Supported: false})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "facets", Supported: false})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "cover_images", Supported: false})
