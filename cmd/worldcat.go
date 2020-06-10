@@ -135,14 +135,14 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 	parsedQ = strings.ReplaceAll(parsedQ, "{", "")
 	parsedQ = strings.ReplaceAll(parsedQ, "}", "")
-	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw all ")
-	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti all ")
-	parsedQ = strings.ReplaceAll(parsedQ, "author:", "srw.au all ")
-	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su all ")
+	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw =")
+	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti =")
+	parsedQ = strings.ReplaceAll(parsedQ, "author:", "srw.au =")
+	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su =")
 	parsedQ = strings.ReplaceAll(parsedQ, "identifier:", "srw.bn =")
 	parsedQ = strings.TrimSpace(parsedQ)
 	log.Printf("Raw parsed query [%s]", parsedQ)
-	if parsedQ == "srw.kw all " || parsedQ == "srw.kw all *" {
+	if parsedQ == "srw.kw =" || parsedQ == "srw.kw = *" {
 		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
 		return
 	}
@@ -159,7 +159,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 
 	// skip any UVA libraries
 	log.Printf("Final parsed query: %s", parsedQ)
-	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM"
+	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM NOT srw.li = VCV"
 
 	startTime := time.Now()
 	qURL := fmt.Sprintf("%s/search/worldcat/sru?recordSchema=dc&query=%s&%s&%s&wskey=%s",
