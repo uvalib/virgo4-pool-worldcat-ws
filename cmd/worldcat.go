@@ -135,14 +135,14 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 	parsedQ = strings.ReplaceAll(parsedQ, "{", "")
 	parsedQ = strings.ReplaceAll(parsedQ, "}", "")
-	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw =")
-	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti =")
-	parsedQ = strings.ReplaceAll(parsedQ, "author:", "srw.au =")
-	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su =")
+	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw all")
+	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti all")
+	parsedQ = strings.ReplaceAll(parsedQ, "author:", "srw.au all")
+	parsedQ = strings.ReplaceAll(parsedQ, "subject:", "srw.su all")
 	parsedQ = strings.ReplaceAll(parsedQ, "identifier:", "srw.bn =")
 	parsedQ = strings.TrimSpace(parsedQ)
 	log.Printf("Raw parsed query [%s]", parsedQ)
-	if parsedQ == "srw.kw =" || parsedQ == "srw.kw = *" {
+	if parsedQ == "srw.kw all" || parsedQ == "srw.kw all *" {
 		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
 		return
 	}
@@ -150,7 +150,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	// if a basic search that is ISBN is done (just a number) do an identifier search too
 	if strings.Index(parsedQ, "srw.") == strings.LastIndex(parsedQ, "srw.") &&
 		strings.Index(parsedQ, "srw.") == strings.Index(parsedQ, "srw.kw") {
-		param := strings.Trim(strings.Split(parsedQ, "=")[1], " ")
+		param := strings.Trim(strings.Split(parsedQ, "all")[1], " ")
 		if _, err := strconv.Atoi(param); err == nil {
 			log.Printf("%s looks like a keyword query for an identifier; add identifier search", parsedQ)
 			parsedQ += fmt.Sprintf(" OR srw.bn = %s", param)
@@ -159,7 +159,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 
 	// skip any UVA libraries
 	log.Printf("Final parsed query: %s", parsedQ)
-	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM NOT srw.li = VCV"
+	parsedQ += " NOT srw.li = VA@  NOT srw.li = VAL NOT srw.li = VAM"
 
 	startTime := time.Now()
 	qURL := fmt.Sprintf("%s/search/worldcat/sru?recordSchema=dc&query=%s&%s&%s&wskey=%s",
