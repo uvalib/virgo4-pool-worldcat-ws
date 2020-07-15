@@ -109,6 +109,7 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.Mode = "record"
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "external_url", Supported: true, Value: "https://www.worldcat.org/"})
+	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "external_hold", Supported: true, Value: "https://www.worldcat.org"})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "uva_ils", Supported: false})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "facets", Supported: false})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "cover_images", Supported: false})
