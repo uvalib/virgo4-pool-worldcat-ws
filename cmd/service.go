@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -25,6 +26,7 @@ type ServiceContext struct {
 	WCAPI      string
 	JWTKey     string
 	I18NBundle *i18n.Bundle
+	HTTPClient *http.Client
 }
 
 // RequestError contains http status code and message for and API request
@@ -45,6 +47,21 @@ func InitializeService(version string, cfg *ServiceConfig) *ServiceContext {
 	svc.I18NBundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	svc.I18NBundle.MustLoadMessageFile("./i18n/active.en.toml")
 	svc.I18NBundle.MustLoadMessageFile("./i18n/active.es.toml")
+
+	log.Printf("Create HTTP Client")
+	defaultTransport := &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 600 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 2 * time.Second,
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+	}
+	svc.HTTPClient = &http.Client{
+		Transport: defaultTransport,
+		Timeout:   5 * time.Second,
+	}
 
 	return &svc
 }
@@ -77,12 +94,11 @@ func (svc *ServiceContext) healthCheck(c *gin.Context) {
 	}
 	hcMap := make(map[string]hcResp)
 
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
 	pingReq, _ := http.NewRequest("GET", svc.WCAPI, nil)
-	resp, postErr := client.Do(pingReq)
+	resp, postErr := svc.HTTPClient.Do(pingReq)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	if postErr != nil {
 		hcMap["worldcat_api"] = hcResp{Healthy: false, Message: postErr.Error()}
 	} else if resp.StatusCode != 200 {
@@ -168,14 +184,10 @@ func (svc *ServiceContext) authMiddleware(c *gin.Context) {
 
 // APIGet sends a GET to the WorldCat API and returns results a byte array
 func (svc *ServiceContext) apiGet(tgtURL string) ([]byte, *RequestError) {
-	log.Printf("JMRL API GET request: %s", tgtURL)
+	log.Printf("WorldCat API GET request: %s", tgtURL)
 	startTime := time.Now()
-	timeout := time.Duration(5 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
 	getReq, _ := http.NewRequest("GET", tgtURL, nil)
-	rawResp, rawErr := client.Do(getReq)
+	rawResp, rawErr := svc.HTTPClient.Do(getReq)
 	resp, err := handleAPIResponse(tgtURL, rawResp, rawErr)
 	elapsedNanoSec := time.Since(startTime)
 	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
