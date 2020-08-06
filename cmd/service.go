@@ -133,9 +133,9 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "sorting", Supported: true})
 	resp.SortOptions = make([]v4api.SortOption, 0)
 	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortRelevance.String(), Label: "Relevance"})
-	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortDate.String(), Label: "Date Published"})
-	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortTitle.String(), Label: "Title"})
-	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortAuthor.String(), Label: "Author"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortDate.String(), Label: "Date Published", Asc: "oldest first", Desc: "newest first"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortTitle.String(), Label: "Title", Asc: "A-Z", Desc: "Z-A"})
+	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortAuthor.String(), Label: "Author", Asc: "A-Z", Desc: "Z-A"})
 
 	c.JSON(http.StatusOK, resp)
 }
