@@ -315,24 +315,24 @@ func getSortKey(sort v4api.SortOrder) string {
 func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 	fields := make([]v4api.RecordField, 0)
 	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier",
-		Value: wcRec.ID, Display: "optional", RISCode: "ID", CitationPart: "id"}
+		Value: wcRec.ID, Display: "optional", CitationPart: "id"}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
-		Value: wcRec.Date, RISCode: "PY", CitationPart: "published_date"}
+		Value: wcRec.Date, CitationPart: "published_date"}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language",
-		Value: wcRec.Language, Visibility: "detailed", RISCode: "LA", CitationPart: "language"}
+		Value: wcRec.Language, Visibility: "detailed", CitationPart: "language"}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0], RISCode: "T1", CitationPart: "title"}
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title[0], CitationPart: "title"}
 	fields = append(fields, f)
 
 	online := false
 	for _, val := range wcRec.ISBN {
 		if strings.Contains(val, "http") == false {
-			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, RISCode: "SN", CitationPart: "serial_number"}
+			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, CitationPart: "serial_number"}
 			fields = append(fields, f)
 		} else {
 			if strings.Contains(val, "api.overdrive") || strings.Contains(val, "[institution]") {
@@ -380,25 +380,25 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Creator {
-		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), RISCode: "AU", CitationPart: "author"}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), CitationPart: "author"}
 		fields = append(fields, f)
 	}
 	for _, val := range wcRec.Contributor {
-		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), RISCode: "AU", CitationPart: "author"}
+		f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(val), CitationPart: "author"}
 		fields = append(fields, f)
 	}
 
 	for _, val := range wcRec.Subjects {
-		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed", RISCode: "KW", CitationPart: "subject"}
+		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: val, Visibility: "detailed", CitationPart: "subject"}
 		fields = append(fields, f)
 	}
 
 	f = v4api.RecordField{Name: "description", Type: "summary", Label: "Description",
-		Value: strings.Join(wcRec.Description, " "), RISCode: "AB", CitationPart: "abstract"}
+		Value: strings.Join(wcRec.Description, " "), CitationPart: "abstract"}
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Publishers {
-		f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val, RISCode: "PB", CitationPart: "publisher"}
+		f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: val, CitationPart: "publisher"}
 	}
 
 	for _, val := range wcRec.Formats {
