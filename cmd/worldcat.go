@@ -186,6 +186,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	fmtErr := xml.Unmarshal(rawResp, wcResp)
 	if fmtErr != nil {
 		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
+		log.Printf("Response: %s", rawResp)
 		v4Resp.StatusCode = http.StatusInternalServerError
 		v4Resp.StatusMessage = fmtErr.Error()
 		c.JSON(v4Resp.StatusCode, v4Resp)
@@ -234,6 +235,7 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 	fmtErr := xml.Unmarshal(rawResp, wcResp)
 	if fmtErr != nil {
 		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
+		log.Printf("Response: %s", rawResp)
 		c.String(http.StatusInternalServerError, fmtErr.Error())
 		return
 	}
