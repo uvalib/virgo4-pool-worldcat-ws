@@ -121,6 +121,13 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
+	// journal queries are not supported; fail them with no results and info
+	if strings.Contains(req.Query, "journal_title:") {
+		log.Printf("ERROR: journal title queries are not supported")
+		c.String(http.StatusNotImplemented, "Journal Title queries are not supported")
+		return
+	}
+
 	paginationStr := fmt.Sprintf("startRecord=%d&maximumRecords=%d", req.Pagination.Start, req.Pagination.Rows)
 	sortKey := fmt.Sprintf("sortKeys=%s", getSortKey(req.Sort))
 
