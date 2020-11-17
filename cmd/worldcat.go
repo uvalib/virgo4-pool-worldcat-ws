@@ -121,10 +121,15 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	// journal queries are not supported; fail them with no results and info
+	// journal and filter queries are not supported; fail them with no results and info
 	if strings.Contains(req.Query, "journal_title:") {
 		log.Printf("ERROR: journal title queries are not supported")
 		c.String(http.StatusNotImplemented, "Journal Title queries are not supported")
+		return
+	}
+	if strings.Contains(req.Query, "filter:") {
+		log.Printf("ERROR: filter queries are not supported")
+		c.String(http.StatusNotImplemented, "Filter queries are not supported")
 		return
 	}
 
@@ -155,7 +160,8 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	// if a basic search that is ISBN is done (just a number) do an identifier search too
-	if strings.Index(parsedQ, "srw.") == strings.LastIndex(parsedQ, "srw.") &&
+	if strings.Contains(parsedQ, "srw.") &&
+		strings.Index(parsedQ, "srw.") == strings.LastIndex(parsedQ, "srw.") &&
 		strings.Index(parsedQ, "srw.") == strings.Index(parsedQ, "srw.kw") {
 		param := strings.Trim(strings.Split(parsedQ, "all")[1], " ")
 		if _, err := strconv.Atoi(param); err == nil {
