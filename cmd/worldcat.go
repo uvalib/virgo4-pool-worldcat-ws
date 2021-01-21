@@ -236,7 +236,9 @@ func (svc *ServiceContext) search(c *gin.Context) {
 // Facets placeholder implementaion for a V4 facet POST.
 func (svc *ServiceContext) facets(c *gin.Context) {
 	log.Printf("Facets requested, but WorldCat does not support this")
-	c.JSON(http.StatusNotImplemented, "Facets are not supported")
+	empty := make(map[string]interface{})
+	empty["facets"] = make([]v4api.Facet, 0)
+	c.JSON(http.StatusOK, empty)
 }
 
 // GetResource will get a WorkdCat resource by ID
