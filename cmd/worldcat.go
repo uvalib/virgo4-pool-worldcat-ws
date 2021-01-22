@@ -121,18 +121,6 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	// WorldCat does not support filtering. If a filter is specified in the search, return 0 hits
-	if len(req.Filters) > 0 || strings.Contains(req.Query, "filter:") {
-		log.Printf("Filters specified in search, return no matches")
-		v4Resp := &v4api.PoolResult{ElapsedMS: 0, Confidence: "low"}
-		v4Resp.Groups = make([]v4api.Group, 0)
-		v4Resp.Pagination = v4api.Pagination{Start: 0, Total: 0, Rows: 0}
-		v4Resp.StatusCode = http.StatusOK
-		v4Resp.ContentLanguage = acceptLang
-		c.JSON(http.StatusOK, v4Resp)
-		return
-	}
-
 	// journal queries are not supported
 	if strings.Contains(req.Query, "journal_title:") {
 		log.Printf("ERROR: journal title queries are not supported")
@@ -163,6 +151,18 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	log.Printf("Raw parsed query [%s]", parsedQ)
 	if parsedQ == "srw.kw all" || parsedQ == "srw.kw all *" {
 		c.String(http.StatusNotImplemented, "At least 3 characters are required.")
+		return
+	}
+
+	// WorldCat does not support filtering. If a filter is specified in the search, return 0 hits
+	if len(req.Filters) > 0 || strings.Contains(req.Query, "filter:") {
+		log.Printf("Filters specified in search, return no matches")
+		v4Resp := &v4api.PoolResult{ElapsedMS: 0, Confidence: "low"}
+		v4Resp.Groups = make([]v4api.Group, 0)
+		v4Resp.Pagination = v4api.Pagination{Start: 0, Total: 0, Rows: 0}
+		v4Resp.StatusCode = http.StatusOK
+		v4Resp.ContentLanguage = acceptLang
+		c.JSON(http.StatusOK, v4Resp)
 		return
 	}
 
