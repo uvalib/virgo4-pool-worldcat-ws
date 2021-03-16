@@ -326,7 +326,7 @@ func convertDateCriteria(query string) (string, error) {
 func extractYear(yearStr string) (string, error) {
 	parts := strings.Split(yearStr, "-")
 	year := parts[0]
-	match, _ := regexp.Match(`\d{4}`, []byte(`1a07`))
+	match, _ := regexp.Match(`\d{4}`, []byte(year))
 	if !match {
 		return "", errors.New("Only 4 digit year is accepted in a date search")
 	}
