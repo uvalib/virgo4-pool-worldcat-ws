@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -136,7 +137,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	// DATES: date: {1987} OR date: {AFTER 2010} OR date: {BEFORE 1990} OR date: {1987 TO 1990}
 	parsedQ, dErr := convertDateCriteria(req.Query)
 	if dErr != nil {
-		log.Printf("ERROR: invalid date in query %s", req.Query)
+		log.Printf("ERROR: invalid date in query %s: %s", req.Query, dErr.Error())
 		c.String(http.StatusBadRequest, dErr.Error())
 		return
 	}
@@ -284,27 +285,35 @@ func convertDateCriteria(query string) (string, error) {
 		// EX: date: {1987} OR date: {AFTER 2010} OR date: {BEFORE 1990} OR date: {1987 TO 1990}
 		qt := strings.Trim(chunk[i0+1:i1], " ")
 		if strings.Contains(qt, "AFTER") {
-			year := strings.Trim(strings.ReplaceAll(qt, "AFTER", ""), " ")
-			if len(year) != 4 {
-				return "", errors.New("Only 4 digit year is accepted in a date search")
+			yearStr := strings.Trim(strings.ReplaceAll(qt, "AFTER", ""), " ")
+			year, err := extractYear(yearStr)
+			if err != nil {
+				return "", err
 			}
 			qt = "srw.yr > " + year
 		} else if strings.Contains(qt, "BEFORE") {
-			year := strings.Trim(strings.ReplaceAll(qt, "BEFORE", ""), " ")
-			if len(year) != 4 {
-				return "", errors.New("Only 4 digit year is accepted in a date search")
+			yearStr := strings.Trim(strings.ReplaceAll(qt, "BEFORE", ""), " ")
+			year, err := extractYear(yearStr)
+			if err != nil {
+				return "", err
 			}
 			qt = "srw.yr < " + year
 		} else if strings.Contains(qt, "TO") {
 			years := strings.Split(qt, " TO ")
-			if len(years[0]) != 4 || len(years[1]) != 4 {
-				return "", errors.New("Only 4 digit year is accepted in a date search")
+			yearFrom, err := extractYear(years[0])
+			if err != nil {
+				return "", errors.New("Starting year is invalid")
 			}
-			qt = fmt.Sprintf("srw.yr >= %s and srw.yr <= %s", years[0], years[1])
+			yearTo, err := extractYear(years[0])
+			if err != nil {
+				return "", errors.New("Ending year is invalid")
+			}
+			qt = fmt.Sprintf("srw.yr >= %s and srw.yr <= %s", yearFrom, yearTo)
 		} else {
-			year := strings.Trim(qt, " ")
-			if len(year) != 4 {
-				return "", errors.New("Only 4 digit year is accepted in a date search")
+			yearStr := strings.Trim(qt, " ")
+			year, err := extractYear(yearStr)
+			if err != nil {
+				return "", err
 			}
 			qt = "srw.yr = " + year
 		}
@@ -312,6 +321,16 @@ func convertDateCriteria(query string) (string, error) {
 		query = fmt.Sprintf("%s %s %s", pre, qt, post)
 	}
 	return query, nil
+}
+
+func extractYear(yearStr string) (string, error) {
+	parts := strings.Split(yearStr, "-")
+	year := parts[0]
+	match, _ := regexp.Match(`\d{4}`, []byte(`1a07`))
+	if !match {
+		return "", errors.New("Only 4 digit year is accepted in a date search")
+	}
+	return year, nil
 }
 
 func getSortKey(sort v4api.SortOrder) string {
