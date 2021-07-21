@@ -411,11 +411,15 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 	}
 
 	if online {
-		availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "Online"}
-		fields = append(fields, availF)
+		/*
+			availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "Online"}
+			fields = append(fields, availF)
+		*/
 	} else {
-		availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "By Request"}
-		fields = append(fields, availF)
+		/*
+			availF := v4api.RecordField{Name: "availability", Type: "availability", Label: "Availability", Value: "By Request"}
+			fields = append(fields, availF)
+		*/
 	}
 
 	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "More Details", Provider: "worldcat",
