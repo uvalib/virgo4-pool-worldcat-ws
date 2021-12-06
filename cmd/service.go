@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,6 +19,16 @@ import (
 	"golang.org/x/text/language"
 )
 
+// OCLC contains data necessary to get and use OCLC auth tokens
+type OCLC struct {
+	Key         string
+	Secret      string
+	AuthURL     string
+	MetadataAPI string
+	Token       string
+	Expires     time.Time
+}
+
 // ServiceContext contains common data used by all handlers
 type ServiceContext struct {
 	Version    string
@@ -27,6 +38,7 @@ type ServiceContext struct {
 	JWTKey     string
 	I18NBundle *i18n.Bundle
 	HTTPClient *http.Client
+	OCLC       OCLC
 }
 
 // RequestError contains http status code and message for and API request
@@ -41,6 +53,11 @@ type RequestError struct {
 func InitializeService(version string, cfg *ServiceConfig) *ServiceContext {
 	log.Printf("Initializing Service")
 	svc := ServiceContext{Version: version, WCKey: cfg.WCKey, WCAPI: cfg.WCAPI, JWTKey: cfg.JWTKey}
+
+	svc.OCLC.AuthURL = cfg.OCLCAuthURL
+	svc.OCLC.Key = cfg.OCLCKey
+	svc.OCLC.Secret = cfg.OCLCSecret
+	svc.OCLC.MetadataAPI = cfg.OCLCMetadataAPI
 
 	log.Printf("Init localization")
 	svc.I18NBundle = i18n.NewBundle(language.English)
@@ -198,6 +215,43 @@ func (svc *ServiceContext) apiGet(tgtURL string) ([]byte, *RequestError) {
 		log.Printf("Successful response from GET %s. Elapsed Time: %d (ms)", tgtURL, elapsedMS)
 	}
 	return resp, err
+}
+
+func (svc *ServiceContext) oclcTokenRequest() *RequestError {
+	log.Printf("INFO: request OCLC token from %s", svc.OCLC.AuthURL)
+	svc.OCLC.Expires = time.Now()
+	svc.OCLC.Token = ""
+	startTime := time.Now()
+	req, _ := http.NewRequest("POST", svc.OCLC.AuthURL, nil)
+	req.SetBasicAuth(svc.OCLC.Key, svc.OCLC.Secret)
+	rawResp, rawErr := svc.HTTPClient.Do(req)
+	resp, err := handleAPIResponse(svc.OCLC.AuthURL, rawResp, rawErr)
+	elapsedNanoSec := time.Since(startTime)
+	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
+
+	if err != nil {
+		log.Printf("ERROR: failed response from OCLC auth reques %s %d. Elapsed Time: %d (ms). %s",
+			svc.OCLC.AuthURL, err.StatusCode, elapsedMS, err.Message)
+		return err
+	}
+
+	log.Printf("INFO: successful response from GET %s. Elapsed Time: %d (ms)", svc.OCLC.AuthURL, elapsedMS)
+	log.Printf("INFO: update OCLC auth token data")
+	var authResponse struct {
+		Token   string `json:"access_token"`
+		Expires string `json:"expires_at"`
+	}
+	parseErr := json.Unmarshal(resp, &authResponse)
+	if parseErr != nil {
+		log.Printf("ERROR: unable to parse auth response: %s", parseErr.Error())
+	}
+
+	expTime, _ := time.Parse("2006-02-02 15:04:05Z", authResponse.Expires)
+	log.Printf("INFO: oclc token expires %+v", expTime)
+	svc.OCLC.Token = authResponse.Token
+	svc.OCLC.Expires = expTime
+
+	return nil
 }
 
 func handleAPIResponse(URL string, resp *http.Response, err error) ([]byte, *RequestError) {

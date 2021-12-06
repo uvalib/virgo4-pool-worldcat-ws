@@ -267,7 +267,32 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 		Fields []v4api.RecordField `json:"fields"`
 	}
 	jsonResp.Fields = getResultFields(wcResp)
+
+	log.Printf("INFO: lookup generalFormat for %s", id)
+	err := svc.refreshOCLCAuth()
+	if err != nil {
+		log.Printf("INFO: unable to refresh OCLC auth: %s", err.Error())
+		c.JSON(http.StatusOK, jsonResp)
+		return
+	}
+
 	c.JSON(http.StatusOK, jsonResp)
+}
+
+func (svc *ServiceContext) refreshOCLCAuth() error {
+	log.Printf("INFO: check OCLC auth token")
+	now := time.Now()
+	if svc.OCLC.Token == "" || svc.OCLC.Expires.After(now) {
+		log.Printf("INFO: requesting new OCLC auth token")
+		err := svc.oclcTokenRequest()
+		if err != nil {
+			return errors.New(err.Message)
+		}
+		log.Printf("INFO: oclc auth successfully updated")
+	} else {
+		log.Printf("INFO: oclc auth is valid and unexpired")
+	}
+	return nil
 }
 
 func convertDateCriteria(query string) (string, error) {
