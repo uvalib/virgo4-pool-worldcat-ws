@@ -199,10 +199,14 @@ func (svc *ServiceContext) authMiddleware(c *gin.Context) {
 }
 
 // APIGet sends a GET to the WorldCat API and returns results a byte array
-func (svc *ServiceContext) apiGet(tgtURL string) ([]byte, *RequestError) {
+func (svc *ServiceContext) apiGet(tgtURL string, bearerToken string) ([]byte, *RequestError) {
 	log.Printf("WorldCat API GET request: %s", tgtURL)
 	startTime := time.Now()
 	getReq, _ := http.NewRequest("GET", tgtURL, nil)
+	if bearerToken != "" {
+		log.Printf("INFO: adding bearer token to api request")
+		getReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", bearerToken))
+	}
 	rawResp, rawErr := svc.HTTPClient.Do(getReq)
 	resp, err := handleAPIResponse(tgtURL, rawResp, rawErr)
 	elapsedNanoSec := time.Since(startTime)

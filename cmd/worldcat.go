@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -185,7 +186,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	startTime := time.Now()
 	qURL := fmt.Sprintf("%s/search/worldcat/sru?recordSchema=dc&query=%s&%s&%s&wskey=%s",
 		svc.WCAPI, url.QueryEscape(parsedQ), paginationStr, sortKey, svc.WCKey)
-	rawResp, respErr := svc.apiGet(qURL)
+	rawResp, respErr := svc.apiGet(qURL, "")
 	if respErr != nil {
 		c.String(respErr.StatusCode, respErr.Message)
 		return
@@ -248,7 +249,7 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 	log.Printf("Resource %s details requested", id)
 	qURL := fmt.Sprintf("%s/content/%s?recordSchema=dc&serviceLevel=full&wskey=%s",
 		svc.WCAPI, id, svc.WCKey)
-	rawResp, respErr := svc.apiGet(qURL)
+	rawResp, respErr := svc.apiGet(qURL, "")
 	if respErr != nil {
 		c.String(respErr.StatusCode, respErr.Message)
 		return
@@ -275,8 +276,37 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 		c.JSON(http.StatusOK, jsonResp)
 		return
 	}
+	genFmt, err := svc.getGeneralFormat(id)
+	if err != nil {
+		log.Printf("ERROR: unable to get general format for %s: %s", id, err.Error())
+	} else {
+		var fmtJSON struct {
+			GeneralFormat  string `json:"generalFormat"`
+			SpecificFormat string `json:"specificFormat"`
+		}
+		parseErr := json.Unmarshal(genFmt, &fmtJSON)
+		if parseErr != nil {
+			log.Printf("ERROR: unable to parse general format response for %s: %s", id, parseErr.Error())
+		} else {
+			log.Printf("INFO: item %s has  format %s:%s", id, fmtJSON.GeneralFormat, fmtJSON.SpecificFormat)
+			gf := v4api.RecordField{Name: "general_format", Type: "format", Label: "General Format",
+				Value: fmtJSON.GeneralFormat, Display: "optional"}
+			jsonResp.Fields = append(jsonResp.Fields, gf)
+			sf := v4api.RecordField{Name: "specific_format", Type: "format", Label: "Specific Format",
+				Value: fmtJSON.GeneralFormat, Display: "optional"}
+			jsonResp.Fields = append(jsonResp.Fields, sf)
+		}
+	}
 
 	c.JSON(http.StatusOK, jsonResp)
+}
+
+func (svc *ServiceContext) getGeneralFormat(id string) ([]byte, error) {
+	resp, respErr := svc.apiGet(fmt.Sprintf("%s/%s", svc.OCLC.MetadataAPI, id), svc.OCLC.Token)
+	if respErr != nil {
+		return nil, errors.New(respErr.Message)
+	}
+	return resp, nil
 }
 
 func (svc *ServiceContext) refreshOCLCAuth() error {
