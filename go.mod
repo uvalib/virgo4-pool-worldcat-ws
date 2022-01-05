@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20220104013430-7d3fb7b4dc33 // indirect
+	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20220104200011-60a98e12bb56 // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/gzip v0.0.5
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
