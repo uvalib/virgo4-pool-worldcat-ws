@@ -314,7 +314,7 @@ func (svc *ServiceContext) getGeneralFormat(id string) ([]byte, error) {
 func (svc *ServiceContext) refreshOCLCAuth() error {
 	log.Printf("INFO: check OCLC auth token")
 	now := time.Now()
-	log.Printf("INFO: token expire %s vs time now %s", svc.OCLC.Expires.Format(time.UnixDate), now.Format(time.UnixDate))
+	log.Printf("INFO: token expire %s vs time now %s", svc.OCLC.Expires.String(), now.String())
 	if svc.OCLC.Expires.After(now) {
 		log.Printf("INFO: token is expired; requesting new OCLC auth token")
 		err := svc.oclcTokenRequest()
