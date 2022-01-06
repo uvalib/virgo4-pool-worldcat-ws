@@ -315,15 +315,15 @@ func (svc *ServiceContext) refreshOCLCAuth() error {
 	log.Printf("INFO: check OCLC auth token")
 	now := time.Now()
 	log.Printf("INFO: token expire %s vs time now %s", svc.OCLC.Expires.Format(time.UnixDate), now.Format(time.UnixDate))
-	if svc.OCLC.Token == "" || svc.OCLC.Expires.After(now) {
-		log.Printf("INFO: requesting new OCLC auth token")
+	if svc.OCLC.Expires.After(now) {
+		log.Printf("INFO: token is expired; requesting new OCLC auth token")
 		err := svc.oclcTokenRequest()
 		if err != nil {
 			return errors.New(err.Message)
 		}
 		log.Printf("INFO: oclc auth successfully updated")
 	} else {
-		log.Printf("INFO: oclc auth is valid and unexpired")
+		log.Printf("INFO: oclc auth is not expired")
 	}
 	return nil
 }
