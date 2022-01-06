@@ -304,6 +304,8 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 func (svc *ServiceContext) getGeneralFormat(id string) ([]byte, error) {
 	resp, respErr := svc.apiGet(fmt.Sprintf("%s/%s", svc.OCLC.MetadataAPI, id), svc.OCLC.Token)
 	if respErr != nil {
+		svc.OCLC.Token = ""
+		svc.OCLC.Expires = time.Now()
 		return nil, errors.New(respErr.Message)
 	}
 	return resp, nil
