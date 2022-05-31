@@ -157,7 +157,16 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	// WorldCat does not support filtering. If a filter is specified in the search, return 0 hits
-	if len(req.Filters) > 0 || strings.Contains(req.Query, "filter:") {
+	// Note: when doing a next page request, the request contains:
+	//       Filters:[{PoolID:worldcat Facets:[]}]
+	//       accept this configuration
+	filtersSpecified := false
+	if len(req.Filters) > 1 {
+		filtersSpecified = true
+	} else if len(req.Filters) == 1 {
+		filtersSpecified = len(req.Filters[0].Facets) > 0
+	}
+	if filtersSpecified || strings.Contains(req.Query, "filter:") {
 		log.Printf("Filters specified in search, return no matches")
 		v4Resp := &v4api.PoolResult{ElapsedMS: 0, Confidence: "low"}
 		v4Resp.Groups = make([]v4api.Group, 0)
