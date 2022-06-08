@@ -15,7 +15,7 @@ require (
 	github.com/uvalib/virgo4-jwt v0.0.0-20220318153624-9330cfc9007d
 	github.com/uvalib/virgo4-parser v0.0.0-20220606190657-5119d778d14a
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
+	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
 	golang.org/x/text v0.3.7
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
