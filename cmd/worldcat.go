@@ -124,8 +124,9 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	// journal queries are not supported
+	// We mark these messages as WARNING's because they are expected
 	if strings.Contains(req.Query, "journal_title:") {
-		log.Printf("ERROR: journal title queries are not supported")
+		log.Printf("WARNING: journal title queries are not supported")
 		c.String(http.StatusNotImplemented, "Journal Title queries are not supported")
 		return
 	}
