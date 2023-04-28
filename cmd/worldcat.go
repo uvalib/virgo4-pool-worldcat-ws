@@ -202,6 +202,15 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
+	strResponse := string(rawResp)
+	if strings.Contains(strResponse, `xml version="1.1"`) == true {
+		// NOTE: golang only supports xml v1.0. From a golang issue, the only way to
+		// parse is to replace version="1.1" with version="1.0"
+		// the issue: https://github.com/golang/go/issues/25755
+		log.Printf("WARNING: xml response is using unsupported version 1.1; manually replacing version text with 1.0")
+		strResponse = strings.Replace(strResponse, `xml version="1.1"`, `xml version="1.0"`, 1)
+	}
+
 	// successful search; setup response
 	elapsedNanoSec := time.Since(startTime)
 	elapsedMS := int64(elapsedNanoSec / time.Millisecond)
@@ -215,10 +224,10 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	wcResp := &wcSearchResponse{}
-	fmtErr := xml.Unmarshal(rawResp, wcResp)
+	fmtErr := xml.Unmarshal([]byte(strResponse), wcResp)
 	if fmtErr != nil {
 		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
-		log.Printf("Response: %s", rawResp)
+		log.Printf("Response: %s", strResponse)
 		v4Resp.StatusCode = http.StatusInternalServerError
 		v4Resp.StatusMessage = fmtErr.Error()
 		c.JSON(v4Resp.StatusCode, v4Resp)
