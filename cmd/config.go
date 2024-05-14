@@ -29,7 +29,7 @@ func LoadConfiguration() *ServiceConfig {
 	flag.StringVar(&cfg.OCLCKey, "oclckey", "", "OCLC API key")
 	flag.StringVar(&cfg.OCLCSecret, "oclcsecret", "", "OCLC API secret")
 	flag.StringVar(&cfg.OCLCAuthURL, "oclcauth", "https://oauth.oclc.org/token?grant_type=client_credentials&scope=WorldCatMetadataAPI", "OCLC Auth endpoint")
-	flag.StringVar(&cfg.OCLCMetadataAPI, "oclcmetadata", "https://americas.metadata.api.oclc.org/worldcat/search/v1/brief-bibs", "OCLC metadata API")
+	flag.StringVar(&cfg.OCLCMetadataAPI, "oclcmetadata", "https://metadata.api.oclc.org/worldcat/search/brief-bibs", "OCLC metadata API")
 
 	flag.Parse()
 

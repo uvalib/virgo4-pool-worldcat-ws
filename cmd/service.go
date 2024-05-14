@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -252,8 +252,10 @@ func (svc *ServiceContext) oclcTokenRequest() *RequestError {
 		log.Printf("ERROR: unable to parse auth response: %s", parseErr.Error())
 	}
 
-	expTime, _ := time.Parse("2006-02-02 15:04:05Z", authResponse.Expires)
-	log.Printf("INFO: oclc token expires %+v", expTime)
+	now := time.Now()
+	expTime, _ := time.Parse("2006-01-02 15:04:05Z", authResponse.Expires)
+	delTime := expTime.Sub(now)
+	log.Printf("INFO: oclc token expires %+v or %2.2f seconds", expTime, delTime.Seconds())
 	svc.OCLC.Token = authResponse.Token
 	svc.OCLC.Expires = expTime
 
@@ -274,13 +276,13 @@ func handleAPIResponse(URL string, resp *http.Response, err error) ([]byte, *Req
 		return nil, &RequestError{StatusCode: status, Message: errMsg}
 	} else if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		bodyBytes, _ := io.ReadAll(resp.Body)
 		status := resp.StatusCode
 		errMsg := string(bodyBytes)
 		return nil, &RequestError{StatusCode: status, Message: errMsg}
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	bodyBytes, _ := io.ReadAll(resp.Body)
 	return bodyBytes, nil
 }
