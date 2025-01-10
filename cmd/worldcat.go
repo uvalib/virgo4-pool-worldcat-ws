@@ -500,7 +500,7 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 		*/
 	}
 
-	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "More Details", Provider: "worldcat",
+	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "View full metadata on WorldCat", Provider: "worldcat",
 		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", wcRec.ID), Visibility: "detailed"}
 	fields = append(fields, f)
 
