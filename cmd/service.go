@@ -11,12 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/uvalib/virgo4-api/v4api"
 	"github.com/uvalib/virgo4-jwt/v4jwt"
-	"golang.org/x/text/language"
 )
 
 // OCLC contains data necessary to get and use OCLC auth tokens
@@ -58,12 +56,6 @@ func InitializeService(version string, cfg *ServiceConfig) *ServiceContext {
 	svc.OCLC.Key = cfg.OCLCKey
 	svc.OCLC.Secret = cfg.OCLCSecret
 	svc.OCLC.MetadataAPI = cfg.OCLCMetadataAPI
-
-	log.Printf("Init localization")
-	svc.I18NBundle = i18n.NewBundle(language.English)
-	svc.I18NBundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-	svc.I18NBundle.MustLoadMessageFile("./i18n/active.en.toml")
-	svc.I18NBundle.MustLoadMessageFile("./i18n/active.es.toml")
 
 	log.Printf("Create HTTP Client")
 	defaultTransport := &http.Transport{
@@ -127,18 +119,13 @@ func (svc *ServiceContext) healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, hcMap)
 }
 
-// IdentifyHandler returns localized identity information for this pool
+// IdentifyHandler returns identity information for this pool
 func (svc *ServiceContext) identifyHandler(c *gin.Context) {
-	acceptLang := strings.Split(c.GetHeader("Accept-Language"), ",")[0]
-	if acceptLang == "" {
-		acceptLang = "en-US"
-	}
-	log.Printf("Identify request Accept-Language %s", acceptLang)
-	localizer := i18n.NewLocalizer(svc.I18NBundle, acceptLang)
-
 	resp := v4api.PoolIdentity{Attributes: make([]v4api.PoolAttribute, 0)}
-	resp.Name = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolName"})
-	resp.Description = localizer.MustLocalize(&i18n.LocalizeConfig{MessageID: "PoolDescription"})
+	resp.Name = "WorldCat"
+	resp.Description = "WorldCat is the world's most comprehensive database of information about library collections. "
+	resp.Description += "Results do not include items that are found elsewhere in UVA's central collection. "
+	resp.Description += "<a href='https://www.worldcat.org/'>Learn more about WorldCat.</a>"
 	resp.Mode = "record"
 
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "logo_url", Supported: true, Value: "/assets/wclogo.png"})

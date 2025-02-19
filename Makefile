@@ -7,7 +7,7 @@ GOVET = $(GOCMD) vet
 GOGET = $(GOCMD) get
 GOMOD = $(GOCMD) mod
 
-build: darwin 
+build: darwin
 
 all: darwin linux
 
@@ -18,7 +18,6 @@ darwin:
 
 linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -a -installsuffix cgo -o bin/v4worldcat.linux cmd/*.go
-	cp -r i18n/ bin/i18n
 	cp -r assets/ bin/assets
 
 clean:
