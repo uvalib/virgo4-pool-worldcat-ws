@@ -1,7 +1,5 @@
 [PoolName]
-desc = "The display name for the WorldCat pool"
 other = "WorldCat"
 
 [PoolDescription]
-desc = "The detailed description for the WorldCat pool"
 other = "WorldCat is the world's most comprehensive database of information about library collections.  Results do not include items that are found elsewhere in UVA’s central collection.  <a href='https://www.worldcat.org/'>Learn more about WorldCat.</a>"
