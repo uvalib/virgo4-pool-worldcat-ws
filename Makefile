@@ -13,7 +13,6 @@ all: darwin linux
 
 darwin:
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) -a -o bin/v4worldcat.darwin cmd/*.go
-	cp -r i18n/ bin/i18n
 	cp -r assets/ bin/assets
 
 linux:
