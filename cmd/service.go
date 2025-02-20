@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/uvalib/virgo4-api/v4api"
 	"github.com/uvalib/virgo4-jwt/v4jwt"
 )
@@ -34,7 +33,6 @@ type ServiceContext struct {
 	WCKey      string
 	WCAPI      string
 	JWTKey     string
-	I18NBundle *i18n.Bundle
 	HTTPClient *http.Client
 	OCLC       OCLC
 }
