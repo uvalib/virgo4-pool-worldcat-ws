@@ -110,11 +110,6 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	acceptLang := strings.Split(c.GetHeader("Accept-Language"), ",")[0]
-	if acceptLang == "" {
-		acceptLang = "en-US"
-	}
-
 	log.Printf("Raw query: %s, %+v %+v", req.Query, req.Pagination, req.Sort)
 	valid, errors := v4parser.Validate(req.Query)
 	if valid == false {
@@ -173,7 +168,6 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		v4Resp.Groups = make([]v4api.Group, 0)
 		v4Resp.Pagination = v4api.Pagination{Start: 0, Total: 0, Rows: 0}
 		v4Resp.StatusCode = http.StatusOK
-		v4Resp.ContentLanguage = acceptLang
 		c.JSON(http.StatusOK, v4Resp)
 		return
 	}
@@ -250,14 +244,13 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	}
 
 	v4Resp.StatusCode = http.StatusOK
-	v4Resp.ContentLanguage = acceptLang
 	c.JSON(http.StatusOK, v4Resp)
 }
 
 // Facets placeholder implementaion for a V4 facet POST.
 func (svc *ServiceContext) facets(c *gin.Context) {
 	log.Printf("Facets requested, but WorldCat does not support this")
-	empty := make(map[string]interface{})
+	empty := make(map[string]any)
 	empty["facets"] = make([]v4api.Facet, 0)
 	c.JSON(http.StatusOK, empty)
 }
