@@ -118,11 +118,21 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
-	// journal queries are not supported
+	// journal_title, fulltext, and series queries are not supported
 	// We mark these messages as WARNING's because they are expected
 	if strings.Contains(req.Query, "journal_title:") {
 		log.Printf("WARNING: journal title queries are not supported")
 		c.String(http.StatusNotImplemented, "Journal Title queries are not supported")
+		return
+	}
+	if strings.Contains(req.Query, "fulltext:") {
+		log.Printf("WARNING: full text queries are not supported")
+		c.String(http.StatusNotImplemented, "Full Text queries are not supported")
+		return
+	}
+	if strings.Contains(req.Query, "series:") {
+		log.Printf("WARNING: series queries are not supported")
+		c.String(http.StatusNotImplemented, "Series queries are not supported")
 		return
 	}
 
