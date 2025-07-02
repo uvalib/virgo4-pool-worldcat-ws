@@ -19,17 +19,6 @@ import (
 	"github.com/uvalib/virgo4-parser/v4parser"
 )
 
-type providerDetails struct {
-	Provider    string `json:"provider"`
-	Label       string `json:"label,omitempty"`
-	HomepageURL string `json:"homepage_url,omitempty"`
-	LogoURL     string `json:"logo_url,omitempty"`
-}
-
-type poolProviders struct {
-	Providers []providerDetails `json:"providers"`
-}
-
 type wcSearchResponse struct {
 	XMLName xml.Name   `xml:"searchRetrieveResponse"`
 	Count   int        `xml:"numberOfRecords"`
@@ -52,46 +41,46 @@ type wcRecord struct {
 	Publishers  []string `xml:"publisher,omitempty"`
 }
 
-// ProvidersHandler returns a list of access_url providers for JMRL
+// ProvidersHandler returns a list of access_url providers for WorldCat
 func (svc *ServiceContext) providersHandler(c *gin.Context) {
-	p := poolProviders{Providers: make([]providerDetails, 0)}
-	p.Providers = append(p.Providers, providerDetails{
+	p := v4api.PoolProviders{Providers: make([]v4api.Provider, 0)}
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "worldcat",
 		Label:       "WorldCat",
 		LogoURL:     "/assets/wclogo.png",
 		HomepageURL: "https://www.worldcat.org/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "hathitrust",
 		Label:       "Hathi Trust Digital Library",
 		LogoURL:     "/assets/hathitrust.png",
 		HomepageURL: "https://www.hathitrust.org/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "proquest",
 		Label:       "ProQuest U.S. Congressional Hearings Digital Collection",
 		LogoURL:     "/assets/proquest.jpg",
 		HomepageURL: "https://www.proquest.com/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "google",
 		Label:       "Google Books",
 		LogoURL:     "/assets/google.png",
 		HomepageURL: "https://books.google.com/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "vlebooks",
 		Label:       "VLeBooks",
 		LogoURL:     "/assets/vlebooks.png",
 		HomepageURL: "https://www.vlebooks.com/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "canadiana",
 		Label:       "Canadiana",
 		LogoURL:     "/assets/canadiana.png",
 		HomepageURL: "http://www.canadiana.ca/",
 	})
-	p.Providers = append(p.Providers, providerDetails{
+	p.Providers = append(p.Providers, v4api.Provider{
 		Provider:    "overdrive",
 		Label:       "Overdrive",
 		LogoURL:     "/assets/overdrive.png",
@@ -100,7 +89,7 @@ func (svc *ServiceContext) providersHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, p)
 }
 
-// Search accepts a search POST, transforms the query into JMRL format and perfoms the search
+// Search accepts a search POST, transforms the query into WorldCat format and perfoms the search
 func (svc *ServiceContext) search(c *gin.Context) {
 	log.Printf("Search requested")
 	var req v4api.SearchRequest
@@ -148,7 +137,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		c.String(http.StatusBadRequest, dErr.Error())
 		return
 	}
-	parsedQ = strings.ReplaceAll(parsedQ, "{", "")
+	parsedQ = strings.ReplaceAll(parsedQ, "{", " ") // ensure space between token and value if passed 'token:{value}'
 	parsedQ = strings.ReplaceAll(parsedQ, "}", "")
 	parsedQ = strings.ReplaceAll(parsedQ, "keyword:", "srw.kw all")
 	parsedQ = strings.ReplaceAll(parsedQ, "title:", "srw.ti all")
@@ -244,7 +233,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		groupRec := v4api.Group{Value: wcRec.ID, Count: 1}
 		groupRec.Records = make([]v4api.Record, 0)
 		record := v4api.Record{}
-		record.Fields = getResultFields(&wcRec)
+		record.Fields = getResultFields(&wcRec, false)
 		groupRec.Records = append(groupRec.Records, record)
 		v4Resp.Groups = append(v4Resp.Groups, groupRec)
 	}
@@ -289,7 +278,7 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 	var jsonResp struct {
 		Fields []v4api.RecordField `json:"fields"`
 	}
-	jsonResp.Fields = getResultFields(wcResp)
+	jsonResp.Fields = getResultFields(wcResp, true)
 
 	log.Printf("INFO: lookup generalFormat for %s", id)
 	err := svc.refreshOCLCAuth()
@@ -436,7 +425,7 @@ func getSortKey(sort v4api.SortOrder) string {
 	return "relevance"
 }
 
-func getResultFields(wcRec *wcRecord) []v4api.RecordField {
+func getResultFields(wcRec *wcRecord, includeLinks bool) []v4api.RecordField {
 	fields := make([]v4api.RecordField, 0)
 	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier",
 		Value: wcRec.ID, Display: "optional", CitationPart: "id"}
@@ -458,7 +447,7 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 		if strings.Contains(val, "http") == false {
 			f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, CitationPart: "serial_number"}
 			fields = append(fields, f)
-		} else {
+		} else if includeLinks == true {
 			if strings.Contains(val, "api.overdrive") || strings.Contains(val, "[institution]") {
 				log.Printf("WARN: Skipping URL that appears invalid: %s", val)
 			} else {
@@ -503,7 +492,7 @@ func getResultFields(wcRec *wcRecord) []v4api.RecordField {
 		*/
 	}
 
-	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "View full metadata on WorldCat", Provider: "worldcat",
+	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "View full metadata on WorldCat",
 		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", wcRec.ID), Visibility: "detailed"}
 	fields = append(fields, f)
 
