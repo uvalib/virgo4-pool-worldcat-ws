@@ -147,6 +147,17 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		return
 	}
 
+	// worldcat does not supprt date only queries
+	if strings.Contains(parsedQ, "yr:") && strings.Contains(parsedQ, "kw:") == false && strings.Contains(parsedQ, "ti:") == false &&
+		strings.Contains(parsedQ, "au:") == false && strings.Contains(parsedQ, "au:") == false && strings.Contains(parsedQ, "no:") == false {
+		log.Printf("INFO; unspoorted date-only query detected [%s]; return no results", parsedQ)
+		v4Resp := &v4api.PoolResult{ElapsedMS: 0, Confidence: "low"}
+		v4Resp.Groups = make([]v4api.Group, 0)
+		v4Resp.Pagination = v4api.Pagination{Start: 0, Total: 0, Rows: 0}
+		v4Resp.StatusCode = http.StatusOK
+		c.JSON(http.StatusOK, v4Resp)
+	}
+
 	// WorldCat does not support filtering. If a filter is specified in the search, return 0 hits
 	// Note: when doing a next page request, the request contains:
 	//       Filters:[{PoolID:worldcat Facets:[]}]
@@ -158,7 +169,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 		filtersSpecified = len(req.Filters[0].Facets) > 0
 	}
 	if filtersSpecified || strings.Contains(req.Query, "filter:") {
-		log.Printf("Filters specified in search, return no matches")
+		log.Printf("INFO: filters specified in search, return no matches")
 		v4Resp := &v4api.PoolResult{ElapsedMS: 0, Confidence: "low"}
 		v4Resp.Groups = make([]v4api.Group, 0)
 		v4Resp.Pagination = v4api.Pagination{Start: 0, Total: 0, Rows: 0}
