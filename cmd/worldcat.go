@@ -32,6 +32,61 @@ type wcBriefRecord struct {
 	Isbns               []string `json:"isbns,omitempty"`
 }
 
+type wcDetailRecord struct {
+	Identifier struct {
+		OclcNumber string   `json:"oclcNumber"`
+		Isbns      []string `json:"isbns"`
+	} `json:"identifier"`
+	Title struct {
+		MainTitles []struct {
+			Text string `json:"text"`
+		} `json:"mainTitles"`
+		SeriesTitles []struct {
+			SeriesTitle string `json:"seriesTitle"`
+		} `json:"seriesTitles"`
+	} `json:"title"`
+	Contributor struct {
+		StatementOfResponsibility struct {
+			Text string `json:"text"`
+		} `json:"statementOfResponsibility"`
+	} `json:"contributor"`
+	Subjects []struct {
+		SubjectName struct {
+			Text string `json:"text"`
+		} `json:"subjectName"`
+	} `json:"subjects"`
+	Publishers []struct {
+		PublisherName struct {
+			Text string `json:"text"`
+		} `json:"publisherName"`
+		PublicationPlace string `json:"publicationPlace"`
+	} `json:"publishers"`
+	Date struct {
+		PublicationDate string `json:"publicationDate"`
+	} `json:"date"`
+	Language struct {
+		ItemLanguage string `json:"itemLanguage"`
+	} `json:"language"`
+	Note struct {
+		GeneralNotes []struct {
+			Text  string `json:"text"`
+			Local string `json:"local"`
+		} `json:"generalNotes"`
+	} `json:"note"`
+	Format struct {
+		GeneralFormat  string   `json:"generalFormat"`
+		SpecificFormat string   `json:"specificFormat"`
+		MaterialTypes  []string `json:"materialTypes"`
+	} `json:"format"`
+	Description struct {
+		PhysicalDescription string `json:"physicalDescription"`
+		Summaries           []struct {
+			Text string `json:"text"`
+		} `json:"summaries"`
+		PeerReviewed string `json:"peerReviewed"`
+	} `json:"description"`
+}
+
 type wcSearchResponse struct {
 	NumberOfRecords int             `json:"numberOfRecords"`
 	BriefRecords    []wcBriefRecord `json:"briefRecords"`
@@ -244,14 +299,14 @@ func (svc *ServiceContext) facets(c *gin.Context) {
 func (svc *ServiceContext) getResource(c *gin.Context) {
 	id := c.Param("id")
 	log.Printf("Resource %s details requested", id)
-	qURL := fmt.Sprintf("%s/worldcat/search/v2/brief-bibs/%s", svc.OCLC.API, id)
+	qURL := fmt.Sprintf("%s/worldcat/search/v2/bibs/%s", svc.OCLC.API, id)
 	rawResp, respErr := svc.apiGet(qURL, svc.OCLC.Token)
 	if respErr != nil {
 		c.String(respErr.StatusCode, respErr.Message)
 		return
 	}
 
-	wcResp := wcBriefRecord{}
+	wcResp := wcDetailRecord{}
 	fmtErr := json.Unmarshal(rawResp, &wcResp)
 	if fmtErr != nil {
 		log.Printf("ERROR: Invalid response from WorldCat API: %s", fmtErr.Error())
@@ -263,7 +318,7 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 	var jsonResp struct {
 		Fields []v4api.RecordField `json:"fields"`
 	}
-	jsonResp.Fields = getResultFields(wcResp)
+	jsonResp.Fields = getDetailFields(wcResp)
 
 	c.JSON(http.StatusOK, jsonResp)
 }
@@ -365,38 +420,98 @@ func getSortKey(sort v4api.SortOrder) string {
 
 func getResultFields(wcRec wcBriefRecord) []v4api.RecordField {
 	fields := make([]v4api.RecordField, 0)
-	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier",
-		Value: wcRec.OclcNumber, Display: "optional", CitationPart: "id"}
+	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier", Value: wcRec.OclcNumber}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date",
-		Value: wcRec.Date, CitationPart: "published_date"}
+	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date", Value: wcRec.Date}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language",
-		Value: wcRec.Language, Visibility: "detailed", CitationPart: "language"}
+	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language", Value: wcRec.Language, Visibility: "detailed"}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title, CitationPart: "title"}
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: wcRec.Title}
 	fields = append(fields, f)
 
 	for _, val := range wcRec.Isbns {
-		f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, CitationPart: "serial_number"}
+		f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
 		fields = append(fields, f)
 	}
+
+	f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(wcRec.Creator)}
+	fields = append(fields, f)
+
+	f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: wcRec.Publisher}
+	fields = append(fields, f)
+
+	f = v4api.RecordField{Name: "general_format", Label: "General Format", Type: "format", Value: wcRec.GeneralFormat}
+	fields = append(fields, f)
+	f = v4api.RecordField{Name: "specific_format", Label: "Specific Format", Type: "format", Value: wcRec.SpecificFormat}
+	fields = append(fields, f)
+
+	return fields
+}
+
+func getDetailFields(details wcDetailRecord) []v4api.RecordField {
+	fields := make([]v4api.RecordField, 0)
+	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier", Value: details.Identifier.OclcNumber}
+	fields = append(fields, f)
+
+	title := details.Title.MainTitles[0].Text
+	title = strings.Split(title, "/")[0]
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: title}
+	fields = append(fields, f)
+
+	f = v4api.RecordField{Name: "author", Label: "Author", Value: details.Contributor.StatementOfResponsibility.Text}
+	fields = append(fields, f)
+
+	f = v4api.RecordField{Name: "format", Label: "Format", Separator: "; ", Value: details.Format.GeneralFormat}
+	fields = append(fields, f)
+	f = v4api.RecordField{Name: "format", Label: "Format", Separator: "; ", Value: details.Format.SpecificFormat}
+	fields = append(fields, f)
+
+	if details.Description.Summaries != nil {
+		f = v4api.RecordField{Name: "subject_summary", Label: "Summary", Value: details.Description.Summaries[0].Text}
+		fields = append(fields, f)
+	}
+
+	for _, sub := range details.Subjects {
+		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: sub.SubjectName.Text}
+		fields = append(fields, f)
+	}
+
+	f = v4api.RecordField{Name: "published_date", Label: "Publication Date", Value: details.Date.PublicationDate}
+	fields = append(fields, f)
+
+	f = v4api.RecordField{Name: "language", Label: "Language", Value: details.Language.ItemLanguage}
+	fields = append(fields, f)
+
+	if details.Title.SeriesTitles != nil {
+		f = v4api.RecordField{Name: "series", Label: "Series", Value: details.Title.SeriesTitles[0].SeriesTitle}
+		fields = append(fields, f)
+	}
+
+	for _, val := range details.Identifier.Isbns {
+		f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
+		fields = append(fields, f)
+	}
+
+	f = v4api.RecordField{Name: "description", Label: "Description", Value: details.Description.PhysicalDescription}
+	fields = append(fields, f)
+
+	for _, note := range details.Note.GeneralNotes {
+		f = v4api.RecordField{Name: "notes", Label: "Notes", Separator: "paragraph", Value: note.Text}
+		fields = append(fields, f)
+	}
+
+	if details.Publishers != nil {
+		f = v4api.RecordField{Name: "publisher_name", Label: "Publisher", Value: details.Publishers[0].PublisherName.Text}
+		fields = append(fields, f)
+		f = v4api.RecordField{Name: "published_location", Label: "Publication Place", Value: details.Publishers[0].PublicationPlace}
+		fields = append(fields, f)
+	}
+
 	f = v4api.RecordField{Name: "worldcat_url", Type: "url", Label: "View full metadata on WorldCat",
-		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", wcRec.OclcNumber), Visibility: "detailed"}
-	fields = append(fields, f)
-
-	f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: html.UnescapeString(wcRec.Creator), CitationPart: "author"}
-	fields = append(fields, f)
-
-	f = v4api.RecordField{Name: "publisher", Label: "Publisher", Visibility: "detailed", Value: wcRec.Publisher, CitationPart: "publisher"}
-	fields = append(fields, f)
-
-	f = v4api.RecordField{Name: "general_format", Label: "General Format", Type: "format", Visibility: "optional", Value: wcRec.GeneralFormat}
-	fields = append(fields, f)
-	f = v4api.RecordField{Name: "specific_format", Label: "Specific Format", Type: "format", Visibility: "optional", Value: wcRec.SpecificFormat}
+		Value: fmt.Sprintf("http://worldcat.org/oclc/%s", details.Identifier.OclcNumber)}
 	fields = append(fields, f)
 
 	return fields
