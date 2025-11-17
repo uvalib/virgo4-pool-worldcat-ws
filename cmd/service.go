@@ -18,20 +18,18 @@ import (
 
 // OCLC contains data necessary to get and use OCLC auth tokens
 type OCLC struct {
-	Key         string
-	Secret      string
-	AuthURL     string
-	MetadataAPI string
-	Token       string
-	Expires     time.Time
+	API     string
+	Key     string
+	Secret  string
+	AuthURL string
+	Token   string
+	Expires time.Time
 }
 
 // ServiceContext contains common data used by all handlers
 type ServiceContext struct {
 	Version    string
 	Port       int
-	WCKey      string
-	WCAPI      string
 	JWTKey     string
 	HTTPClient *http.Client
 	OCLC       OCLC
@@ -48,12 +46,12 @@ type RequestError struct {
 // Any errors are FATAL.
 func InitializeService(version string, cfg *ServiceConfig) *ServiceContext {
 	log.Printf("Initializing Service")
-	svc := ServiceContext{Version: version, WCKey: cfg.WCKey, WCAPI: cfg.WCAPI, JWTKey: cfg.JWTKey}
+	svc := ServiceContext{Version: version, JWTKey: cfg.JWTKey}
 
+	svc.OCLC.API = cfg.WCAPI
 	svc.OCLC.AuthURL = cfg.OCLCAuthURL
 	svc.OCLC.Key = cfg.OCLCKey
 	svc.OCLC.Secret = cfg.OCLCSecret
-	svc.OCLC.MetadataAPI = cfg.OCLCMetadataAPI
 
 	log.Printf("Create HTTP Client")
 	defaultTransport := &http.Transport{
@@ -100,19 +98,7 @@ func (svc *ServiceContext) healthCheck(c *gin.Context) {
 		Message string `json:"message,omitempty"`
 	}
 	hcMap := make(map[string]hcResp)
-
-	pingReq, _ := http.NewRequest("GET", svc.WCAPI, nil)
-	resp, postErr := svc.HTTPClient.Do(pingReq)
-	if resp != nil {
-		defer resp.Body.Close()
-	}
-	if postErr != nil {
-		hcMap["worldcat_api"] = hcResp{Healthy: false, Message: postErr.Error()}
-	} else if resp.StatusCode != 200 {
-		hcMap["worldcat_api"] = hcResp{Healthy: false, Message: resp.Status}
-	} else {
-		hcMap["worldcat_api"] = hcResp{Healthy: true}
-	}
+	hcMap["worldcat"] = hcResp{Healthy: true}
 
 	c.JSON(http.StatusOK, hcMap)
 }
@@ -137,8 +123,6 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.SortOptions = make([]v4api.SortOption, 0)
 	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortRelevance.String(), Label: "Relevance"})
 	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortDate.String(), Label: "Date Published", Asc: "oldest first", Desc: "newest first"})
-	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortTitle.String(), Label: "Title", Asc: "A-Z", Desc: "Z-A"})
-	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortAuthor.String(), Label: "Author", Asc: "A-Z", Desc: "Z-A"})
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -158,10 +142,15 @@ func getBearerToken(authorization string) (string, error) {
 // AuthMiddleware is a middleware handler that verifies presence of a
 // user Bearer token in the Authorization header.
 func (svc *ServiceContext) authMiddleware(c *gin.Context) {
+	if err := svc.refreshOCLCAuth(); err != nil {
+		log.Printf("ERROR: unable to refresh oclc session: %s", err.Error())
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
 	tokenStr, err := getBearerToken(c.Request.Header.Get("Authorization"))
 	if err != nil {
 		log.Printf("Authentication failed: [%s]", err.Error())
 		c.AbortWithStatus(http.StatusUnauthorized)
+		// log.Printf("INFO: skipping auth")
 		return
 	}
 
