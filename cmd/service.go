@@ -118,7 +118,7 @@ func (svc *ServiceContext) identifyHandler(c *gin.Context) {
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "sorting", Supported: true})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "ill_request", Supported: true})
 	resp.Attributes = append(resp.Attributes, v4api.PoolAttribute{Name: "item_message", Supported: true,
-		Value: `This resource is not held by the UVA Library. You may request an Interlibrary Loan using the 'Request Item' button below.`})
+		Value: `This resource is not held by the UVA Library. You may request an Interlibrary Loan using the 'Request Interlibrary Loan' button below.`})
 
 	resp.SortOptions = make([]v4api.SortOption, 0)
 	resp.SortOptions = append(resp.SortOptions, v4api.SortOption{ID: v4api.SortRelevance.String(), Label: "Relevance"})

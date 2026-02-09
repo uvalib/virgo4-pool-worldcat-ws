@@ -306,6 +306,8 @@ func (svc *ServiceContext) getResource(c *gin.Context) {
 		return
 	}
 
+	log.Printf("DETAILS [%s]", rawResp)
+
 	wcResp := wcDetailRecord{}
 	fmtErr := json.Unmarshal(rawResp, &wcResp)
 	if fmtErr != nil {
@@ -461,12 +463,18 @@ func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: title}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "author", Label: "Author", Value: details.Contributor.StatementOfResponsibility.Text}
+	f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: details.Contributor.StatementOfResponsibility.Text}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "format", Label: "Format", Separator: "; ", Value: details.Format.GeneralFormat}
 	fields = append(fields, f)
+	f = v4api.RecordField{Name: "general_format", Type: "format", Label: "General Format",
+		Value: details.Format.GeneralFormat, Display: "optional"}
+	fields = append(fields, f)
 	f = v4api.RecordField{Name: "format", Label: "Format", Separator: "; ", Value: details.Format.SpecificFormat}
+	fields = append(fields, f)
+	f = v4api.RecordField{Name: "specific_format", Type: "format", Label: "Specific Format",
+		Value: details.Format.GeneralFormat, Display: "optional"}
 	fields = append(fields, f)
 
 	if details.Description.Summaries != nil {
@@ -479,7 +487,7 @@ func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 		fields = append(fields, f)
 	}
 
-	f = v4api.RecordField{Name: "published_date", Label: "Publication Date", Value: details.Date.PublicationDate}
+	f = v4api.RecordField{Name: "publication_date", Label: "Publication Date", Value: details.Date.PublicationDate}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "language", Label: "Language", Value: details.Language.ItemLanguage}
