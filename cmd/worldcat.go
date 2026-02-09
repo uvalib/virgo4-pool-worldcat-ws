@@ -455,15 +455,15 @@ func getResultFields(wcRec wcBriefRecord) []v4api.RecordField {
 
 func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 	fields := make([]v4api.RecordField, 0)
-	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier", Value: details.Identifier.OclcNumber}
+	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier", Value: details.Identifier.OclcNumber, CitationPart: "id"}
 	fields = append(fields, f)
 
 	title := details.Title.MainTitles[0].Text
 	title = strings.Split(title, "/")[0]
-	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: title}
+	f = v4api.RecordField{Name: "title", Type: "title", Label: "Title", Value: title, CitationPart: "title"}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: details.Contributor.StatementOfResponsibility.Text}
+	f = v4api.RecordField{Name: "author", Type: "author", Label: "Author", Value: details.Contributor.StatementOfResponsibility.Text, CitationPart: "author"}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "format", Label: "Format", Separator: "; ", Value: details.Format.GeneralFormat}
@@ -478,19 +478,19 @@ func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 	fields = append(fields, f)
 
 	if details.Description.Summaries != nil {
-		f = v4api.RecordField{Name: "subject_summary", Label: "Summary", Value: details.Description.Summaries[0].Text}
+		f = v4api.RecordField{Name: "subject_summary", Label: "Summary", Value: details.Description.Summaries[0].Text, CitationPart: "abstract"}
 		fields = append(fields, f)
 	}
 
 	for _, sub := range details.Subjects {
-		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: sub.SubjectName.Text}
+		f = v4api.RecordField{Name: "subject", Type: "subject", Label: "Subject", Value: sub.SubjectName.Text, CitationPart: "subject"}
 		fields = append(fields, f)
 	}
 
-	f = v4api.RecordField{Name: "publication_date", Label: "Publication Date", Value: details.Date.PublicationDate}
+	f = v4api.RecordField{Name: "published_date", Label: "Publication Date", Value: details.Date.PublicationDate, CitationPart: "published_date"}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "language", Label: "Language", Value: details.Language.ItemLanguage}
+	f = v4api.RecordField{Name: "language", Label: "Language", Value: details.Language.ItemLanguage, CitationPart: "language"}
 	fields = append(fields, f)
 
 	if details.Title.SeriesTitles != nil {
@@ -499,7 +499,7 @@ func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 	}
 
 	for _, val := range details.Identifier.Isbns {
-		f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val}
+		f = v4api.RecordField{Name: "isbn", Type: "isbn", Label: "ISBN", Value: val, CitationPart: "serial_number"}
 		fields = append(fields, f)
 	}
 
@@ -512,9 +512,9 @@ func getDetailFields(details wcDetailRecord) []v4api.RecordField {
 	}
 
 	if details.Publishers != nil {
-		f = v4api.RecordField{Name: "publisher_name", Label: "Publisher", Value: details.Publishers[0].PublisherName.Text}
+		f = v4api.RecordField{Name: "publisher_name", Label: "Publisher", Value: details.Publishers[0].PublisherName.Text, CitationPart: "publisher"}
 		fields = append(fields, f)
-		f = v4api.RecordField{Name: "published_location", Label: "Publication Place", Value: details.Publishers[0].PublicationPlace}
+		f = v4api.RecordField{Name: "published_location", Label: "Publication Place", Value: details.Publishers[0].PublicationPlace, CitationPart: "published_location"}
 		fields = append(fields, f)
 	}
 
