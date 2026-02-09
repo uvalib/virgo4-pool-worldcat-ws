@@ -425,7 +425,7 @@ func getResultFields(wcRec wcBriefRecord) []v4api.RecordField {
 	f := v4api.RecordField{Name: "id", Type: "identifier", Label: "Identifier", Value: wcRec.OclcNumber}
 	fields = append(fields, f)
 
-	f = v4api.RecordField{Name: "publication_date", Type: "publication_date", Label: "Publication Date", Value: wcRec.Date}
+	f = v4api.RecordField{Name: "published_date", Type: "published_date", Label: "Publication Date", Value: wcRec.Date}
 	fields = append(fields, f)
 
 	f = v4api.RecordField{Name: "language", Type: "language", Label: "Language", Value: wcRec.Language, Visibility: "detailed"}
