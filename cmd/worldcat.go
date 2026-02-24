@@ -153,7 +153,7 @@ func (svc *ServiceContext) search(c *gin.Context) {
 	log.Printf("Raw query: %s, %+v %+v", req.Query, req.Pagination, req.Sort)
 	valid, errors := v4parser.Validate(req.Query)
 	if valid == false {
-		log.Printf("ERROR: Query [%s] is not valid: %s", req.Query, errors)
+		log.Printf("INFO: Query [%s] is not valid: %s", req.Query, errors)
 		c.String(http.StatusBadRequest, "Malformed search")
 		return
 	}
