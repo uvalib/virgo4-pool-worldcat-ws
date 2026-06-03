@@ -76,8 +76,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY=
 github.com/ugorji/go/codec v1.3.1/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
-github.com/uvalib/virgo4-api v1.2.1 h1:Y3T4U+a9UvmPG/lQ++YThnDDT6KVvy0rz9uH5VpvAx0=
-github.com/uvalib/virgo4-api v1.2.1/go.mod h1:p+LmQBQahBom6DErthL8iGZU6NgRJ9aN2wM7EE6VBSE=
+github.com/uvalib/virgo4-api v1.3.0 h1:T+NbW5Uq+2D28yWtso1TEpCk7kK6iBJUFLXzKWWyTG4=
+github.com/uvalib/virgo4-api v1.3.0/go.mod h1:p+LmQBQahBom6DErthL8iGZU6NgRJ9aN2wM7EE6VBSE=
 github.com/uvalib/virgo4-jwt v1.3.4 h1:+Nk0vq7nb8dQSGYj9VlsUxT4Pvh8mSD/bm4oSEcItcQ=
 github.com/uvalib/virgo4-jwt v1.3.4/go.mod h1:DRJvgFxU66toxScJ66Kn9iLAjRaEVVY1127yDb2/4Ok=
 github.com/uvalib/virgo4-parser v1.0.0 h1:fvmxugQ1ralmlb2SUx45/s6tXM8KM3RqbEig5zlv+DM=
